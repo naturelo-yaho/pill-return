@@ -69,64 +69,59 @@ details summary{cursor:pointer;font-weight:800}
 .ocrRun{background:#fff5d9;color:#7b6218;padding:10px;border-radius:12px}
 .ocrBad{background:#fff0f0;color:#a43d3d;padding:10px;border-radius:12px}
 .codebox{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f3f6f5;border-radius:10px;padding:10px;font-size:12px;word-break:break-all}
-.shotList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
-.shotCard{border:1px solid var(--line);border-radius:13px;padding:8px;background:#fff}
-.shotCard img{width:100%;height:150px;object-fit:contain;background:#111;border-radius:9px}
+.shotList{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.shotCard{border:1px solid var(--line);border-radius:14px;padding:10px;background:#fff;display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center}
+.shotCard img{width:110px;height:110px;object-fit:contain;background:#111;border-radius:10px}
 .shotMeta{display:flex;align-items:center;gap:7px;margin-top:7px}
 .shotMeta b{font-size:18px;flex:1}
 .shotMeta button{padding:7px 9px}
-@media(max-width:560px){.shotList{grid-template-columns:1fr 1fr}.shotCard img{height:120px}}
+@media(max-width:560px){.shotCard{grid-template-columns:96px 1fr}.shotCard img{width:96px;height:96px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v17</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v18</span></div>
   <p>필렌즈에서 계수 → 내보내기 → 약 개수 자동인식 → 약명 직접 입력 → 낱알반품 등록</p>
 </header>
 
 
 <div class="wrap">
-<section class="card" id="shareDebugCard">
-  <h2>필렌즈 숫자 인식</h2>
-  <div class="note" style="margin-bottom:8px">
-    약 이름은 읽지 않습니다. 필렌즈 화면의 <b>가운데 큰 약 개수 숫자만</b> 읽습니다. 여러 장이면 각 사진의 숫자를 자동으로 더합니다.
-  </div>
-  <div id="shareDebugStatus" class="note" style="font-size:14px">아직 필렌즈에서 공유받은 파일이 없습니다.</div>
-  <div id="shareDebugMeta" class="codebox hidden" style="margin-top:10px"></div>
-  <div id="cropDebug" class="hidden" style="margin-top:10px">
-    <div class="note"><b>숫자 인식에 사용한 영역</b></div>
-    <img id="countCropPreview" class="preview" style="display:block;max-height:180px">
-  </div>
-  <img id="shareDebugImage" class="preview" style="margin-top:10px">
-  <div class="row" style="margin-top:10px">
-<button class="secondary" id="forceUpdateBtn" style="margin-top:8px">최신버전 확인</button>
-<div id="updateStatus" class="note" style="margin-top:6px"></div>
-<button class="secondary" id="clearSharedDebug">누적 수량 초기화</button></div>
-</section>
 
-<section class="card">
-  <h2>1. 필렌즈 결과사진 올리기</h2>
+<section class="card" id="inputModeCard">
+  <h2>반품 형태</h2>
+  <div class="row">
+    <button class="primary" id="modeLoose">낱알</button>
+    <button class="secondary" id="modePTP">PTP / 포장상태</button>
+  </div>
+  <div id="ptpHelp" class="note hidden" style="margin-top:8px">
+    PTP나 포장상태 약은 사진 없이 약명과 수량을 직접 입력하면 됩니다.
+  </div>
+</section>
+<section class="card" id="loosePhotoSection">
+  <h2>1. 필렌즈 계수사진</h2>
   <div class="upload">
-    <input id="pillEyePhoto" type="file" accept="image/*" multiple>
-    <button class="primary" id="pillEyeBtn">📷 필렌즈 결과사진 선택 (여러 장 가능)</button>
+    <input id="pillEyePhoto" type="file" accept="image/*" >
+    <button class="primary" id="pillEyeBtn">📷 필렌즈 사진 1장 선택</button>
     <div class="note" style="margin-top:8px">필렌즈에서 내보낸 화면을 그대로 보내세요. 약이 많아 2~3번 나눠 센 경우 사진을 차례로 공유하거나 여러 장을 한 번에 선택하면 <b>수량을 합산</b>합니다.</div>
     <img id="pillEyePreview" class="preview">
     <div id="shareStatus" class="note" style="margin-top:8px"></div>
-    <div id="ocrStatus" class="note" style="margin-top:8px"></div>
+    <div id="ocrStatus" class="hidden" class="note" style="margin-top:8px"></div>
   </div>
 </section>
 
+
 <section class="card" id="shotHistoryCard">
-  <div class="row">
-    <h2 style="margin:0;flex:1">이번 약 계수사진 / 합산내역</h2>
-    <button class="secondary" id="clearShots">사진·합산 초기화</button>
+  <div class="row" style="align-items:center">
+    <h2 style="margin:0;flex:1">계수사진</h2>
+    <button class="secondary" id="addAnotherShot">+ 같은 약 추가 촬영</button>
   </div>
-  <div class="note" style="margin-top:7px">
-    필렌즈에서 여러 번 나눠 센 경우 각 사진과 개수를 모두 보관합니다. 예: 142 + 97 + 25 = 264T
+  <div id="singleShotSummary" class="note" style="margin-top:8px">사진 1장으로 계수하면 여기에는 최종 수량만 표시됩니다.</div>
+  <div id="multiShotArea" class="hidden">
+    <div id="shotFormula" class="totalBox" style="margin-top:10px"></div>
+    <div id="shotList" class="shotList"></div>
+    <button class="secondary" id="clearShots" style="margin-top:10px">합산 초기화</button>
   </div>
-  <div id="shotFormula" class="totalBox" style="margin-top:10px"><b>아직 계수사진이 없습니다.</b></div>
-  <div id="shotList" class="shotList"></div>
 </section>
 
 <section class="card">
@@ -243,24 +238,38 @@ const WHOLE='pill-return-wholesalers-v10', RECENT='pill-return-recent-v10', BACK
 let draftItems=[], currentPhotoData='';
 
 let countShots=[];
+let appendShotMode=false;
 
 function renderCountShots(){
   const total=countShots.reduce((s,x)=>s+(Number(x.qty)||0),0);
-  if(countShots.length){
-    $('#shotFormula').innerHTML=`<div class="note">합산</div><b>${countShots.map(x=>Number(x.qty)||0).join(' + ')} = ${total}T</b>`;
-  }else{
-    $('#shotFormula').innerHTML='<b>아직 계수사진이 없습니다.</b>';
+  const multi=countShots.length>1;
+  if($('#multiShotArea')) $('#multiShotArea').classList.toggle('hidden',!multi);
+  if($('#singleShotSummary')){
+    $('#singleShotSummary').innerHTML=countShots.length===0
+      ? '아직 계수사진이 없습니다.'
+      : countShots.length===1
+        ? `<b>${countShots[0].qty}T</b> · 사진 1장`
+        : `<b>${total}T</b> · ${countShots.length}장 합산`;
   }
-  $('#shotList').innerHTML=countShots.map((x,i)=>`
-    <div class="shotCard">
-      <img src="${x.photo}" alt="${i+1}번째 계수사진">
-      <div class="shotMeta">
-        <span>${i+1}번째</span>
-        <b>${x.qty}T</b>
-        <button class="secondary shotEdit" data-i="${i}">수정</button>
-        <button class="danger shotDel" data-i="${i}">삭제</button>
-      </div>
-    </div>`).join('');
+  if($('#shotFormula')){
+    $('#shotFormula').innerHTML=multi
+      ? `<div class="note">합산내역</div><b style="font-size:24px">${countShots.map(x=>Number(x.qty)||0).join(' + ')} = ${total}T</b>`
+      : '';
+  }
+  if($('#shotList')){
+    $('#shotList').innerHTML=multi ? countShots.map((x,i)=>`
+      <div class="shotCard">
+        <img src="${x.photo}" alt="${i+1}번째 계수사진">
+        <div>
+          <div class="note">${i+1}번째 사진</div>
+          <div style="font-size:28px;font-weight:900;margin:4px 0">${x.qty}T</div>
+          <div class="row">
+            <button class="secondary shotEdit" data-i="${i}">수량 수정</button>
+            <button class="danger shotDel" data-i="${i}">삭제</button>
+          </div>
+        </div>
+      </div>`).join('') : '';
+  }
   $$('.shotDel').forEach(b=>b.onclick=()=>{
     countShots.splice(Number(b.dataset.i),1);countParts=countShots.map(x=>Number(x.qty)||0);syncShotTotal();renderCountShots();
   });
@@ -506,6 +515,7 @@ function calcItem(){
   $('#formula').textContent=`${qty}T × ${won(price)} = ${won(total)}`;
 }
 function resetCurrentItem(){
+  inputMode='loose'; setTimeout(applyInputMode,0);
   countShots=[]; if($('#shotList'))renderCountShots();
   currentPhotoData='';
   $('#pillEyePhoto').value='';$('#pillEyePreview').src='';$('#pillEyePreview').style.display='none';$('#shareStatus').textContent='';$('#ocrStatus').textContent='';lastPillensFile=null;countParts=[];
@@ -518,7 +528,7 @@ function addItem(){
   if(!drug){alert('약 이름을 입력해 주세요.');return}
   if(qty<=0){alert('필렌즈에서 센 수량(T)을 입력해 주세요.');return}
 
-  draftItems.push({id:uid(),drug,qty,unitPrice:price,total:qty*price,photo:currentPhotoData,countShots:JSON.parse(JSON.stringify(countShots))});
+  draftItems.push({id:uid(),drug,qty,unitPrice:price,total:qty*price,photo:currentPhotoData,countShots:JSON.parse(JSON.stringify(countShots)),inputMode});
   savePriceVersion(drug,price,$('#sentDate').value||today());
   rememberRecent(drug);refreshMaster();renderDraft();resetCurrentItem();
   window.scrollTo({top:0,behavior:'smooth'});
@@ -528,7 +538,7 @@ function renderDraft(){
     <div class="row">
       ${x.photo?`<img class="thumb" src="${x.photo}">`:''}
       <div class="grow">
-        <div class="itemHead"><span class="badge">${i+1}</span><h3>${esc(x.drug)}</h3></div>
+        <div class="itemHead"><span class="badge">${i+1}</span><h3>${esc(x.drug)}${x.inputMode==="ptp"?` <span class="pill">PTP</span>`:""}</h3></div>
         <div class="recordItems">${x.qty}T × ${won(x.unitPrice)} = <b>${won(x.total)}</b></div>
         ${x.countShots&&x.countShots.length?`<div class="note" style="margin-top:5px">계수: ${x.countShots.map(s=>s.qty).join(' + ')} = ${x.qty}T</div>
         <div style="display:flex;gap:5px;overflow-x:auto;margin-top:5px">${x.countShots.map(s=>`<img src="${s.photo}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;background:#111">`).join('')}</div>`:''}
@@ -592,7 +602,7 @@ if($('#forceUpdateBtn')){
         s.textContent='새 버전 발견. 적용 중…';
         reg.waiting.postMessage({type:'SKIP_WAITING'});
       }else{
-        s.textContent='현재 최신 버전입니다. (v17)';
+        s.textContent='현재 최신 버전입니다. (v18)';
       }
     }catch(e){
       s.textContent='업데이트 확인 실패: '+(e.message||e);
@@ -601,12 +611,37 @@ if($('#forceUpdateBtn')){
 }
 
 
+
+if($('#addAnotherShot'))$('#addAnotherShot').onclick=()=>{
+  appendShotMode=true;
+  const inp=$('#pillensPhoto')||$('#pillEyePhoto');
+  if(inp)inp.click();
+};
+
 if($('#clearShots'))$('#clearShots').onclick=()=>{
   if(!countShots.length || confirm('현재 약의 계수사진과 합산내역을 모두 지울까요?')){
     countShots=[];countParts=[];syncShotTotal();renderCountShots();
   }
 };
 renderCountShots();
+
+
+let inputMode='loose';
+function applyInputMode(){
+  const loose=inputMode==='loose';
+  if($('#modeLoose')){$('#modeLoose').className=loose?'primary':'secondary'}
+  if($('#modePTP')){$('#modePTP').className=!loose?'primary':'secondary'}
+  if($('#loosePhotoSection'))$('#loosePhotoSection').classList.toggle('hidden',!loose);
+  if($('#shotHistoryCard'))$('#shotHistoryCard').classList.toggle('hidden',!loose);
+  if($('#ptpHelp'))$('#ptpHelp').classList.toggle('hidden',loose);
+}
+if($('#modeLoose'))$('#modeLoose').onclick=()=>{inputMode='loose';applyInputMode()};
+if($('#modePTP'))$('#modePTP').onclick=()=>{
+  inputMode='ptp';
+  countShots=[];countParts=[];currentPhotoData='';renderCountShots();
+  applyInputMode();
+};
+applyInputMode();
 
 $('#sentDate').value=today();refreshWholesalers();renderRecords();
 }
