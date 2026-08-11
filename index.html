@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#087d63">
 <link rel="manifest" href="./manifest.webmanifest">
-<title>낱알반품 관리</title>
+<title>낱알반품 관리 - 공유수신 테스트</title>
 <style>
 :root{
   --bg:#f3f6f5;--card:#fff;--ink:#1d2825;--muted:#6d7975;--brand:#087d63;--brand2:#075d4b;
@@ -68,16 +68,29 @@ details summary{cursor:pointer;font-weight:800}
 .ocrOk{background:#eaf6f2;color:#08745a;padding:10px;border-radius:12px;font-weight:800}
 .ocrRun{background:#fff5d9;color:#7b6218;padding:10px;border-radius:12px}
 .ocrBad{background:#fff0f0;color:#a43d3d;padding:10px;border-radius:12px}
-</style>
+.codebox{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f3f6f5;border-radius:10px;padding:10px;font-size:12px;word-break:break-all}</style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 <header>
   <h1>낱알반품 관리</h1>
-  <p>PillEye 결과사진 → 약 선택 → T수/금액 → 품목 추가 → 마감 → 도매상 차감 추적</p>
+  <p>PillEye 내보내기 → 실제 공유파일 수신 테스트 → 이후 자동인식 연결</p>
 </header>
 
+
 <div class="wrap">
+<section class="card" id="shareDebugCard">
+  <h2>공유 수신 테스트</h2>
+  <div id="shareDebugStatus" class="note" style="font-size:14px">
+    아직 PillEye에서 공유받은 파일이 없습니다.
+  </div>
+  <div id="shareDebugMeta" class="codebox hidden" style="margin-top:10px"></div>
+  <img id="shareDebugImage" class="preview" style="margin-top:10px">
+  <div class="row" style="margin-top:10px">
+    <button class="secondary" id="clearSharedDebug">공유 테스트 초기화</button>
+  </div>
+</section>
+
 
 <section class="card">
   <h2>1. PillEye 결과사진 올리기</h2>
@@ -471,7 +484,24 @@ function closeBatch(){
 
   let w=load(WHOLE,[]);if(!w.includes(wholesaler)){w.push(wholesaler);store(WHOLE,w)}
   alert(`마감 완료\n${draftItems.length}종 / ${draftItems.reduce((s,x)=>s+x.qty,0)}T / ${won(total)}\n${sentDate} / ${wholesaler}`);
-  draftItems=[];renderDraft();$('#batchMemo').value='';$('#wholesaler').value='';$('#sentDate').value=today();refreshWholesalers();renderRecords();
+  draftItems=[];renderDraft();$('#batchMemo').value='';$('#wholesaler').value='';
+$('#clearSharedDebug').onclick=async()=>{
+  try{
+    const db=await openShareDB();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction('shares','readwrite');
+      tx.objectStore('shares').delete('latest');
+      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+    });
+  }catch(e){}
+  $('#shareDebugStatus').textContent='공유 테스트를 초기화했습니다. PillEye에서 다시 내보내기 해보세요.';
+  $('#shareDebugMeta').classList.add('hidden');
+  $('#shareDebugMeta').textContent='';
+  $('#shareDebugImage').src='';
+  $('#shareDebugImage').style.display='none';
+};
+
+$('#sentDate').value=today();refreshWholesalers();renderRecords();
 }
 function batchStats(b){
   const deducted=(b.deductions||[]).reduce((s,d)=>s+n(d.amount),0);
@@ -616,17 +646,42 @@ async function loadSharedImage(){
       };
       get.onerror=()=>reject(get.error);
     });
-    if(!item || !item.blob)return;
-    const file=new File([item.blob],item.name||'PillEye.jpg',{type:item.type||item.blob.type||'image/jpeg'});
+
+    if(!item || !item.blob){
+      $('#shareDebugStatus').textContent='아직 PillEye에서 공유받은 파일이 없습니다.';
+      return;
+    }
+
+    const file=new File([item.blob],item.name||'shared-image',{type:item.type||item.blob.type||'application/octet-stream'});
     lastPillEyeFile=file;
+
+    const rawUrl=URL.createObjectURL(file);
+    $('#shareDebugImage').src=rawUrl;
+    $('#shareDebugImage').style.display='block';
+
+    const sizeKB=(file.size/1024).toFixed(1);
+    $('#shareDebugStatus').innerHTML='<b style="color:#087d63">공유 파일 수신 성공</b>';
+    $('#shareDebugMeta').classList.remove('hidden');
+    $('#shareDebugMeta').textContent=
+      `파일명: ${file.name}
+`+
+      `MIME: ${file.type||'(없음)'}
+`+
+      `크기: ${sizeKB} KB
+`+
+      `수신시각: ${new Date(item.savedAt||Date.now()).toLocaleString('ko-KR')}`;
+
+    // Also feed the actual app preview so we can verify the exact payload.
     currentPhotoData=await compressImage(file);
     $('#pillEyePreview').src=currentPhotoData;
     $('#pillEyePreview').style.display='block';
-    $('#shareStatus').innerHTML='<b style="color:#087d63">PillEye에서 공유한 사진을 받았습니다.</b> 약명과 T수를 자동으로 읽습니다.';
+    $('#shareStatus').innerHTML='<b style="color:#087d63">PillEye 공유파일을 실제로 받았습니다.</b> 위 테스트 영역에서 전달된 원본 형태를 확인하세요.';
+    $('#ocrStatus').textContent='이번 테스트 버전에서는 OCR보다 먼저 “어떤 파일이 실제로 넘어오는지”만 확인합니다.';
+    $('#retryOcr').classList.add('hidden');
     window.scrollTo({top:0,behavior:'smooth'});
-    await recognizePillEye(file);
   }catch(e){
     console.error('shared image load failed',e);
+    $('#shareDebugStatus').innerHTML='<b style="color:#ad3c3c">공유 수신 처리 실패</b><br>'+esc(String(e&&e.message||e));
   }
 }
 if('serviceWorker' in navigator){

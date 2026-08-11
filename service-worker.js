@@ -1,4 +1,4 @@
-const CACHE='pill-return-v3-pill-eye-ocr';
+const CACHE='pill-return-v4-share-debug';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',event=>{
