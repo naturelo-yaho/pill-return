@@ -76,12 +76,80 @@ details summary{cursor:pointer;font-weight:800}
 .shotMeta b{font-size:18px;flex:1}
 .shotMeta button{padding:7px 9px}
 @media(max-width:560px){.shotCard{grid-template-columns:96px 1fr}.shotCard img{width:96px;height:96px}}
+
+/* v35 mobile wrapping fixes */
+.record summary,
+.record .recordSummary {
+  overflow: visible !important;
+}
+.record summary > *,
+.record .recordSummary > * {
+  min-width: 0;
+}
+@media (max-width: 600px){
+  .record summary,
+  .record .recordSummary{
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+    align-items: start !important;
+  }
+  .record summary b,
+  .record summary span,
+  .record .recordSummary b,
+  .record .recordSummary span{
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .record .row,
+  .itemRow .row{
+    flex-wrap: wrap !important;
+  }
+
+  .recordItems > div,
+  .itemRow > div{
+    min-width: 0 !important;
+  }
+
+  .recordItems [style*="grid-template-columns"],
+  .itemRow [style*="grid-template-columns"]{
+    grid-template-columns: 28px minmax(0,1fr) !important;
+    gap: 6px 8px !important;
+  }
+
+  .recordItems [style*="grid-template-columns"] > :nth-child(n+3),
+  .itemRow [style*="grid-template-columns"] > :nth-child(n+3){
+    grid-column: 2 !important;
+    justify-self: start !important;
+  }
+
+  .moneyPanel{
+    grid-template-columns: 1fr !important;
+  }
+
+  button,
+  .badge{
+    white-space: normal !important;
+  }
+
+  .recordItems b,
+  .recordItems span,
+  .itemRow b,
+  .itemRow span,
+  .note{
+    overflow-wrap: anywhere !important;
+    word-break: keep-all !important;
+  }
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v34</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v35</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -755,9 +823,9 @@ function renderDraft(){
           <b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.drug)}</b>
           <small style="color:var(--muted)">${x.inputMode==='ptp'?'PTP':'낱알'}${x.countShots&&x.countShots.length>1?' · '+x.countShots.length+'장 합산':''}</small>
         </div>
-        <b style="white-space:nowrap">${x.qty}T</b>
-        <span style="white-space:nowrap">${won(x.unitPrice)}/T</span>
-        <b style="white-space:nowrap">${won(x.total)}</b>
+        <b style="white-space:normal;overflow-wrap:anywhere">${x.qty}T</b>
+        <span style="white-space:normal;overflow-wrap:anywhere">${won(x.unitPrice)}/T</span>
+        <b style="white-space:normal;overflow-wrap:anywhere">${won(x.total)}</b>
         <div style="display:flex;gap:5px">
           <button class="secondary editDraft" data-id="${x.id}" style="padding:8px 10px">수정</button>
           <button class="danger delDraft" data-id="${x.id}" style="padding:8px 10px">삭제</button>
@@ -838,7 +906,7 @@ if($('#forceUpdateBtn')){
         s.textContent='새 버전 발견. 적용 중…';
         reg.waiting.postMessage({type:'SKIP_WAITING'});
       }else{
-        s.textContent='현재 최신 버전입니다. (v34)';
+        s.textContent='현재 최신 버전입니다. (v33)';
       }
     }catch(e){
       s.textContent='업데이트 확인 실패: '+(e.message||e);
@@ -956,29 +1024,6 @@ function batchStats(b){
     extra:Math.max(deducted-sent,0)
   };
 }
-
-function openItemPhotos(batchId,itemIndex){
-  const batch=load(BATCH,[]).find(b=>b.id===batchId); if(!batch)return;
-  const item=(batch.items||[])[Number(itemIndex)]; if(!item)return;
-
-  const shots=(item.countShots&&item.countShots.length)
-    ? item.countShots
-    : (item.photo?[{qty:item.qty,photo:item.photo}]:[]);
-
-  $('#photoModalTitle').textContent=`${item.drug} · 사진 ${shots.length}장`;
-  $('#photoModalBody').innerHTML=shots.length
-    ? shots.map((s,i)=>`
-        <div style="border:1px solid var(--line);border-radius:14px;padding:10px">
-          <div style="font-weight:800;margin-bottom:8px">${shots.length>1?`${i+1}차 · `:''}${s.qty||''}${s.qty?'T':''}</div>
-          <img src="${s.photo}" style="width:100%;max-height:70vh;object-fit:contain;background:#111;border-radius:12px;display:block">
-        </div>`).join('')
-    : '<div class="note" style="padding:20px;text-align:center">저장된 사진이 없습니다.</div>';
-
-  $('#photoModal').classList.remove('hidden');
-}
-if($('#photoModalClose'))$('#photoModalClose').onclick=()=>$('#photoModal').classList.add('hidden');
-if($('#photoModal'))$('#photoModal').onclick=e=>{if(e.target.id==='photoModal')$('#photoModal').classList.add('hidden')};
-
 function renderRecords(){
   const q=$('#search').value.trim().toLowerCase();
   const rows=load(BATCH,[])
@@ -990,34 +1035,29 @@ function renderRecords(){
     const diffText=(st.diff>0?'+':'')+won(st.diff);
     return `
       <details class="record" style="padding:0;overflow:hidden">
-        <summary style="list-style:none;cursor:pointer;padding:13px 14px;display:grid;grid-template-columns:92px minmax(90px,1fr) auto auto;gap:8px;align-items:center">
+        <summary style="list-style:none;cursor:pointer;padding:14px 16px;display:grid;grid-template-columns:minmax(92px,110px) minmax(90px,1fr) minmax(110px,auto);gap:10px;align-items:center">
           <b>${esc(b.sentDate||'')}</b>
-          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.wholesaler||'도매상 미지정')}</span>
-          <span style="white-space:nowrap">반품 ${won(b.sentTotal)}</span>
-          <b style="white-space:nowrap">차감 ${won(st.deducted)}</b>
+          <span style="white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere">${esc(b.wholesaler||'도매상 미지정')}</span>
+          <b style="white-space:normal;overflow-wrap:anywhere">${won(b.sentTotal)}</b>
         </summary>
 
         <div style="border-top:1px solid var(--line);padding:14px">
-          <div class="note" style="margin-bottom:8px">${done?'차감완료':'차감중'} · 품목 ${(b.items||[]).length}종 · 차이 ${diffText}</div>
+          <div class="note" style="margin-bottom:8px">${done?'차감완료':'차감중'} · 품목 ${(b.items||[]).length}종</div>
 
           <div style="display:flex;flex-direction:column;gap:6px">
-            ${(b.items||[]).map((i,idx)=>{
-              const hasPhoto=(i.photo)||(i.countShots&&i.countShots.length);
-              return `
-              <div style="display:grid;grid-template-columns:28px minmax(100px,1fr) auto auto auto ${hasPhoto?'auto':''};gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #edf1f0">
+            ${(b.items||[]).map((i,idx)=>`
+              <div style="display:grid;grid-template-columns:28px minmax(100px,1fr) auto auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #edf1f0">
                 <span class="badge">${idx+1}</span>
                 <b style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.drug)}</b>
                 <span>${i.qty}T</span>
                 <span>${won(i.unitPrice)}/T</span>
                 <b>${won(i.total)}</b>
-                ${hasPhoto?`<button type="button" class="secondary photoViewBtn" data-batch="${b.id}" data-index="${idx}" style="padding:7px 9px">사진 보기</button>`:''}
-              </div>`;
-            }).join('')}
+              </div>`).join('')}
           </div>
 
           <div class="moneyPanel" style="margin-top:12px">
-            <div class="moneyBox"><small>총 반품금액</small><b>${won(b.sentTotal)}</b></div>
-            <div class="moneyBox"><small>반품 빠진금액</small><b>${won(st.deducted)}</b></div>
+            <div class="moneyBox"><small>보낸금액</small><b>${won(b.sentTotal)}</b></div>
+            <div class="moneyBox"><small>실제 차감</small><b>${won(st.deducted)}</b></div>
             <div class="moneyBox diff"><small>차이</small><b>${diffText}</b></div>
           </div>
 
@@ -1036,12 +1076,6 @@ function renderRecords(){
         </div>
       </details>`;
   }).join('')||'<div class="note" style="text-align:center;padding:18px">마감된 반품 기록이 없습니다.</div>';
-
-  $$('.photoViewBtn').forEach(btn=>btn.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    openItemPhotos(btn.dataset.batch,btn.dataset.index);
-  });
 
   $$('.addDeduction').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id,arr=load(BATCH,[]),batch=arr.find(x=>x.id===id);if(!batch)return;
@@ -1455,16 +1489,5 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){try{saveDraft()}catch(e){}}
 });
 </script>
-
-<div id="photoModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;padding:18px;overflow:auto">
-  <div style="max-width:760px;margin:20px auto;background:#fff;border-radius:18px;padding:14px;position:relative">
-    <div class="row" style="margin-bottom:10px">
-      <h3 id="photoModalTitle" style="margin:0;flex:1">사진 보기</h3>
-      <button type="button" id="photoModalClose" class="secondary">닫기</button>
-    </div>
-    <div id="photoModalBody" style="display:flex;flex-direction:column;gap:14px"></div>
-  </div>
-</div>
-
 </body>
 </html>
