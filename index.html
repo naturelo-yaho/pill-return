@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#087d63">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>낱알반품 관리</title>
+<style>
+:root{
+  --bg:#f3f6f5;--card:#fff;--ink:#1d2825;--muted:#6d7975;--brand:#087d63;--brand2:#075d4b;
+  --line:#dbe4e1;--soft:#eaf6f2;--warn:#fff5d9;--danger:#d84b4b;--blue:#eaf2ff
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif}
+header{position:sticky;top:0;z-index:60;background:var(--brand);color:#fff;padding:15px 16px 13px;box-shadow:0 2px 10px #0002}
+header h1{font-size:20px;margin:0} header p{font-size:12px;margin:4px 0 0;opacity:.88}
+.wrap{max-width:980px;margin:auto;padding:14px 14px 110px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 4px 18px #183f3309}
+h2{font-size:17px;margin:0 0 12px} h3{font-size:15px;margin:0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.grow{flex:1}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
+input,select,textarea,button{font:inherit}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid #ccd7d3;border-radius:12px;background:white;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px #087d6318}
+textarea{min-height:72px;resize:vertical}
+button{border:0;border-radius:12px;padding:10px 13px;font-weight:800;cursor:pointer}
+.primary{background:var(--brand);color:white}.primary:active{background:var(--brand2)}
+.secondary{background:#edf3f1;color:#29443b}
+.danger{background:#fff0f0;color:#ac3b3b}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+.hidden{display:none!important}
+.upload{border:2px dashed #9fc3b8;border-radius:17px;padding:15px;background:#f9fcfb;text-align:center}
+.upload input{display:none}
+.preview{display:none;width:100%;max-height:380px;object-fit:contain;background:#eee;border-radius:12px;margin-top:10px}
+.quickList{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.quick{border:1px solid #cfe3dc;background:#eef6f3;color:#17634f;border-radius:99px;padding:8px 11px;font-size:13px}
+.quick strong{font-weight:800}
+.countBox{background:var(--soft);border-radius:15px;padding:13px;margin-top:10px}
+.countBox input{font-size:30px;font-weight:900;text-align:center}
+.totalBox{background:#eef7f4;border-radius:14px;padding:13px;margin-top:10px;text-align:center}
+.totalBox b{font-size:23px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.sum{background:var(--soft);border-radius:13px;padding:12px;text-align:center}.sum small{display:block;color:#5f776f}.sum b{font-size:17px}
+@media(max-width:560px){.summary{grid-template-columns:1fr}}
+.itemRow{border:1px solid var(--line);border-radius:15px;padding:12px;margin-top:9px;background:white}
+.itemHead{display:flex;gap:8px;align-items:center}.itemHead h3{flex:1}
+.thumb{width:72px;height:72px;border-radius:10px;object-fit:cover;background:#eee;flex:0 0 auto}
+.badge{font-size:11px;padding:5px 8px;border-radius:99px;background:#e8f7f2;color:#08745a;font-weight:800}
+.badge.wait{background:var(--warn);color:#896414}.badge.done{background:#eaf2ff;color:#315a9e}
+.toolbar{display:flex;gap:8px;position:sticky;bottom:10px;z-index:40}.toolbar button{flex:1;box-shadow:0 4px 18px #0002}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.chip{border:1px solid #cfe3dc;background:#eef6f3;color:#17634f;border-radius:99px;padding:8px 11px;font-size:13px}
+.chip.active{background:var(--brand);color:white;border-color:var(--brand)}
+.hr{height:1px;background:var(--line);margin:13px 0}
+.record{border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:11px}
+.recordTop{display:flex;gap:8px;align-items:center}.recordTop h3{flex:1}
+.recordItems{font-size:13px;line-height:1.75;margin-top:8px}
+.moneyPanel{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.moneyBox{border-radius:12px;padding:10px;text-align:center;background:#f5f8f7}.moneyBox small{display:block;color:var(--muted)}.moneyBox b{font-size:15px}
+.moneyBox.remain{background:#fff4dc}.moneyBox.diff{background:#eef4ff}
+@media(max-width:700px){.moneyPanel{grid-template-columns:repeat(2,1fr)}}
+.deduction{border-top:1px solid var(--line);padding-top:9px;margin-top:9px;font-size:13px}
+.search{margin:5px 0 8px}
+details summary{cursor:pointer;font-weight:800}
+
+.ocrOk{background:#eaf6f2;color:#08745a;padding:10px;border-radius:12px;font-weight:800}
+.ocrRun{background:#fff5d9;color:#7b6218;padding:10px;border-radius:12px}
+.ocrBad{background:#fff0f0;color:#a43d3d;padding:10px;border-radius:12px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>낱알반품 관리</h1>
+  <p>PillEye 결과사진 → 약 선택 → T수/금액 → 품목 추가 → 마감 → 도매상 차감 추적</p>
+</header>
+
+<div class="wrap">
+
+<section class="card">
+  <h2>1. PillEye 결과사진 올리기</h2>
+  <div class="upload">
+    <input id="pillEyePhoto" type="file" accept="image/*">
+    <button class="primary" id="pillEyeBtn">📷 PillEye 결과사진 선택</button>
+    <div class="note" style="margin-top:8px">
+      PillEye에서 「내보내기/공유」 → 「낱알반품 관리」를 선택하면 이 화면으로 사진이 바로 들어옵니다. 직접 사진을 선택해도 됩니다.
+    </div>
+    <img id="pillEyePreview" class="preview">
+    <div id="shareStatus" class="note" style="margin-top:8px"></div>
+    <div id="ocrStatus" class="note" style="margin-top:8px"></div>
+    <button class="secondary hidden" id="retryOcr" style="margin-top:8px">약명·T수 다시 읽기</button>
+  </div>
+</section>
+
+<section class="card">
+  <h2>2. 약 이름 / 수량 / 가격</h2>
+
+  <label>약 이름</label>
+  <input id="drugName" list="drugMaster" autocomplete="off" placeholder="처음 약이면 직접 입력, 기존 약이면 일부만 검색">
+  <datalist id="drugMaster"></datalist>
+  <div class="note" style="margin-top:6px">
+    한 번 저장한 약은 다음부터 <b>부루</b>처럼 일부만 입력하면 아래에서 바로 선택할 수 있습니다.
+  </div>
+  <div id="existingResults" class="quickList"></div>
+
+  <div class="grid2" style="margin-top:12px">
+    <div>
+      <label>PillEye에서 센 수량(T)</label>
+      <div class="countBox">
+        <input id="qty" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 15">
+        <div class="row" style="justify-content:center;margin-top:8px">
+          <button class="secondary" id="minusQty">-1</button>
+          <button class="secondary" id="plusQty">+1</button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <label>1T당 반품금액(원)</label>
+      <input id="unitPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="예: 45">
+      <div class="note" style="margin-top:6px">
+        기존 약은 최근 가격이 자동으로 들어옵니다. 약가가 바뀌면 수정하세요. 과거 마감 기록은 그대로 유지됩니다.
+      </div>
+      <div id="priceHistoryNote" class="note" style="margin-top:6px"></div>
+    </div>
+  </div>
+
+  <div class="totalBox">
+    <div class="note">이 약 반품금액</div>
+    <b id="itemTotal">0원</b>
+    <div class="note" id="formula"></div>
+  </div>
+
+  <button class="primary" id="addItem" style="width:100%;margin-top:10px">이 약 추가 완료</button>
+</section>
+
+<section class="card">
+  <div class="row">
+    <h2 style="margin:0;flex:1">오늘 반품할 약</h2>
+    <button class="secondary" id="newItem">+ 다음 약 추가</button>
+  </div>
+  <div id="draftItems"></div>
+  <div class="summary">
+    <div class="sum"><small>품목 수</small><b id="draftKinds">0종</b></div>
+    <div class="sum"><small>총 수량</small><b id="draftQty">0T</b></div>
+    <div class="sum"><small>총 금액</small><b id="draftTotal">0원</b></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>3. 발송 정보 및 마감</h2>
+  <div class="grid2">
+    <div><label>보낸 날짜</label><input id="sentDate" type="date"></div>
+    <div>
+      <label>도매상</label>
+      <input id="wholesaler" list="wholesalers" placeholder="예: 백제약품">
+      <datalist id="wholesalers"></datalist>
+      <div id="wholeChips" class="chips"></div>
+    </div>
+  </div>
+  <textarea id="batchMemo" placeholder="메모" style="margin-top:10px"></textarea>
+  <div class="toolbar" style="margin-top:10px">
+    <button class="secondary" id="resetDraft">초기화</button>
+    <button class="primary" id="closeBatch">오늘 반품 마감</button>
+  </div>
+</section>
+
+<section class="card">
+  <div class="row">
+    <h2 style="margin:0;flex:1">반품 / 차감 내역</h2>
+    <button class="secondary" id="exportBtn">전체 백업</button>
+    <button class="secondary" id="importBtn">백업 복원</button>
+    <input id="importFile" class="hidden" type="file" accept=".json,application/json">
+  </div>
+  <div class="note" id="backupInfo" style="margin:8px 0 10px">
+    백업파일에는 반품기록, 차감내역, 약명·약가 이력, 도매상, 최근 사용약이 모두 포함됩니다.
+  </div>
+  <div class="row" style="margin-bottom:8px">
+    <div class="grow note">마지막 백업: <b id="lastBackupText">없음</b></div>
+    <button class="secondary" id="backupNowBtn">지금 백업</button>
+  </div>
+  <input id="search" class="search" placeholder="약명 · 도매상 · 날짜 검색">
+  <div id="records"></div>
+</section>
+
+<section class="card">
+  <details>
+    <summary>약가표 / 도매상 관리</summary>
+    <div class="note" style="margin-top:10px">한 번 등록한 약명과 가격은 다음부터 자동으로 사용합니다.</div>
+    <div id="masterList"></div>
+    <div class="hr"></div>
+    <div class="row">
+      <input id="wholeNew" class="grow" placeholder="도매상 추가">
+      <button class="secondary" id="wholeAdd">추가</button>
+    </div>
+    <div id="wholeManage"></div>
+  </details>
+</section>
+
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const BATCH='pill-return-batches-v10', MASTER='pill-return-master-v10', PRICEHIST='pill-return-price-history-v10';
+const WHOLE='pill-return-wholesalers-v10', RECENT='pill-return-recent-v10', BACKUPMETA='pill-return-backup-meta-v10';
+
+let draftItems=[], currentPhotoData='';
+
+function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function today(){return new Date().toISOString().slice(0,10)}
+function won(v){return (Number(v)||0).toLocaleString('ko-KR',{maximumFractionDigits:2})+'원'}
+function n(v){return Number(v)||0}
+function load(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
+function store(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+function getPriceHistory(){return load(PRICEHIST,{})}
+function getCurrentPrice(drug){
+  const arr=getPriceHistory()[drug]||[];
+  if(arr.length)return n(arr[arr.length-1].price);
+  const m=load(MASTER,{});
+  return m[drug]!=null?n(m[drug]):null;
+}
+function savePriceVersion(drug,price,date){
+  if(!drug)return;
+  const h=getPriceHistory(), arr=h[drug]||[], p=n(price), d=date||today();
+  const last=arr[arr.length-1];
+  if(!last||n(last.price)!==p)arr.push({price:p,effectiveDate:d,changedAt:new Date().toISOString()});
+  h[drug]=arr;store(PRICEHIST,h);
+  const m=load(MASTER,{});m[drug]=p;store(MASTER,m);
+}
+function priceHistoryText(drug){
+  return (getPriceHistory()[drug]||[]).map(x=>`${x.effectiveDate} ${won(x.price)}/T`).join(' → ');
+}
+function rememberRecent(drug){
+  let r=load(RECENT,[]).filter(x=>x!==drug);r.unshift(drug);store(RECENT,r.slice(0,12));
+}
+
+function refreshMaster(){
+  const m=load(MASTER,{});
+  $('#drugMaster').innerHTML=Object.keys(m).sort().map(x=>`<option value="${esc(x)}"></option>`).join('');
+  $('#masterList').innerHTML=Object.keys(m).sort().map(drug=>`
+    <div style="border-top:1px solid #dbe4e1;padding:9px 0">
+      <div class="row">
+        <span class="grow"><b>${esc(drug)}</b></span>
+        <b>${won(getCurrentPrice(drug))}/T</b>
+        <button class="secondary priceEdit" data-drug="${encodeURIComponent(drug)}">약가변경</button>
+      </div>
+      ${priceHistoryText(drug)?`<div class="note">약가이력: ${esc(priceHistoryText(drug))}</div>`:''}
+    </div>`).join('') || '<div class="note">등록된 약이 없습니다.</div>';
+
+  $$('.priceEdit').forEach(b=>b.onclick=()=>{
+    const drug=decodeURIComponent(b.dataset.drug), old=getCurrentPrice(drug);
+    const val=prompt(`${drug}\n새 1T 가격`,old??'');if(val===null)return;
+    const d=prompt('적용일 (YYYY-MM-DD)',today());if(d===null)return;
+    savePriceVersion(drug,n(String(val).replace(/,/g,'')),d||today());refreshMaster();
+  });
+  renderExistingResults();
+}
+function refreshWholesalers(){
+  if(!localStorage.getItem(WHOLE))store(WHOLE,['백제약품','지오영','복산나이스','온라인팜']);
+  const w=load(WHOLE,[]);
+  $('#wholesalers').innerHTML=w.map(x=>`<option value="${esc(x)}"></option>`).join('');
+  $('#wholeChips').innerHTML=w.map(x=>`<button class="chip" data-w="${esc(x)}">${esc(x)}</button>`).join('');
+  $$('#wholeChips .chip').forEach(b=>b.onclick=()=>{$('#wholesaler').value=b.dataset.w});
+  $('#wholeManage').innerHTML=w.map(x=>`<div class="row" style="border-top:1px solid #dbe4e1;padding:8px 0">
+    <span class="grow">${esc(x)}</span><button class="danger wholeDel" data-w="${encodeURIComponent(x)}">삭제</button></div>`).join('');
+  $$('.wholeDel').forEach(b=>b.onclick=()=>{store(WHOLE,load(WHOLE,[]).filter(x=>x!==decodeURIComponent(b.dataset.w)));refreshWholesalers()});
+}
+
+function applyDrug(drug){
+  if(!drug)return;
+  $('#drugName').value=drug;
+  const p=getCurrentPrice(drug);
+  $('#unitPrice').value=p==null?'':p;
+  $('#priceHistoryNote').textContent=priceHistoryText(drug)?`약가 이력: ${priceHistoryText(drug)}`:'';
+  calcItem();
+}
+function renderExistingResults(){
+  const q=$('#drugName').value.trim().toLowerCase();
+  const all=Object.keys(load(MASTER,{})), recent=load(RECENT,[]);
+  let list=q?all.filter(x=>x.toLowerCase().includes(q)).slice(0,12):recent.filter(x=>all.includes(x)).slice(0,8);
+  $('#existingResults').innerHTML=list.map(x=>`<button type="button" class="quick existingPick" data-drug="${encodeURIComponent(x)}">
+    <strong>${esc(x)}</strong> · ${won(getCurrentPrice(x))}/T
+  </button>`).join('');
+  $$('.existingPick').forEach(b=>b.onclick=()=>applyDrug(decodeURIComponent(b.dataset.drug)));
+}
+
+
+function levenshtein(a,b){
+  a=String(a||'');b=String(b||'');
+  const m=Array.from({length:b.length+1},(_,i)=>[i]);
+  m[0]=Array.from({length:a.length+1},(_,i)=>i);
+  for(let i=1;i<=b.length;i++)for(let j=1;j<=a.length;j++)
+    m[i][j]=b[i-1]===a[j-1]?m[i-1][j-1]:1+Math.min(m[i-1][j],m[i][j-1],m[i-1][j-1]);
+  return m[b.length][a.length];
+}
+function bestKnownDrug(raw){
+  const clean=String(raw||'').replace(/\s+/g,'').replace(/[^\uAC00-\uD7A3A-Za-z0-9().\-]/g,'');
+  const all=Object.keys(load(MASTER,{}));
+  if(!clean||!all.length)return null;
+  let best=null,score=999;
+  for(const drug of all){
+    const d=drug.replace(/\s+/g,'');
+    if(clean.includes(d)||d.includes(clean))return drug;
+    const s=levenshtein(clean,d)/Math.max(clean.length,d.length,1);
+    if(s<score){score=s;best=drug}
+  }
+  return score<=0.38?best:null;
+}
+async function imageFromFile(file){
+  return await new Promise((resolve,reject)=>{
+    const im=new Image(),u=URL.createObjectURL(file);
+    im.onload=()=>{URL.revokeObjectURL(u);resolve(im)};im.onerror=reject;im.src=u;
+  });
+}
+function cropForPillEyeOCR(img){
+  // PillEye exported card: drug name and green count are in the lower part.
+  // OCR only this region, then enlarge it to improve Korean recognition and speed.
+  const w=img.naturalWidth,h=img.naturalHeight;
+  const sx=0, sy=Math.floor(h*0.66), sw=w, sh=Math.max(1,h-sy);
+  const scale=Math.min(3,1800/sw);
+  const c=document.createElement('canvas');
+  c.width=Math.max(1,Math.round(sw*scale));c.height=Math.max(1,Math.round(sh*scale));
+  const ctx=c.getContext('2d');
+  ctx.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height);
+  const data=ctx.getImageData(0,0,c.width,c.height);
+  for(let i=0;i<data.data.length;i+=4){
+    const y=.299*data.data[i]+.587*data.data[i+1]+.114*data.data[i+2];
+    const v=y>205?255:y<105?0:y;
+    data.data[i]=data.data[i+1]=data.data[i+2]=v;
+  }
+  ctx.putImageData(data,0,0);
+  return c;
+}
+function parsePillEyeText(text){
+  const lines=String(text||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  const korean=lines.filter(x=>/[\uAC00-\uD7A3]/.test(x));
+  const bad=/(이미지|내보내기|제조|정제|정|약국|복약|날짜|pill|eye)/i;
+  let candidates=korean
+    .map(x=>x.replace(/^[^가-힣A-Za-z0-9]+|[^가-힣A-Za-z0-9() .\-]+$/g,'').trim())
+    .filter(x=>x.length>=2 && !bad.test(x));
+  // Prefer lines ending in common dosage-form suffixes.
+  candidates.sort((a,b)=>{
+    const sa=/(정|캡슐|연질캡슐|장용정|서방정)\b/.test(a)?0:1;
+    const sb=/(정|캡슐|연질캡슐|장용정|서방정)\b/.test(b)?0:1;
+    return sa-sb || a.length-b.length;
+  });
+  let rawDrug=candidates[0]||'';
+  let known=bestKnownDrug(rawDrug);
+
+  // PillEye count is usually a standalone integer; prefer 1~9999.
+  const nums=[];
+  for(const line of lines){
+    const ms=line.match(/(?:^|\s)(\d{1,4})(?:\s*T)?(?:$|\s)/g)||[];
+    for(const m of ms){const v=parseInt(m.replace(/\D/g,''),10);if(v>0&&v<10000)nums.push(v)}
+  }
+  // Prefer a number on a short line (PillEye count), otherwise last plausible number.
+  let qty=null;
+  for(const line of lines){
+    const m=line.match(/^\D{0,3}(\d{1,4})\D{0,3}$/);
+    if(m){const v=parseInt(m[1],10);if(v>0&&v<10000)qty=v}
+  }
+  if(qty==null && nums.length)qty=nums[nums.length-1];
+  return {rawDrug,drug:known||rawDrug,known,qty,lines};
+}
+async function recognizePillEye(file){
+  const status=$('#ocrStatus'),retry=$('#retryOcr');
+  retry.classList.add('hidden');
+  status.className='note ocrRun';
+  status.textContent='PillEye 결과에서 약명과 T수를 읽는 중…';
+  if(!window.Tesseract){
+    status.className='note ocrBad';status.textContent='자동인식 엔진을 불러오지 못했습니다. 약명과 T수를 직접 입력해 주세요.';retry.classList.remove('hidden');return;
+  }
+  try{
+    const img=await imageFromFile(file),crop=cropForPillEyeOCR(img);
+    const result=await Tesseract.recognize(crop,'kor+eng',{
+      logger:m=>{if(m.status==='recognizing text')status.textContent=`약명·T수 읽는 중… ${Math.round((m.progress||0)*100)}%`}
+    });
+    const parsed=parsePillEyeText(result.data.text);
+    if(parsed.drug){
+      $('#drugName').value=parsed.drug;
+      const price=getCurrentPrice(parsed.drug);
+      if(price!=null)$('#unitPrice').value=price;
+      $('#priceHistoryNote').textContent=priceHistoryText(parsed.drug)?`약가 이력: ${priceHistoryText(parsed.drug)}`:'';
+    }
+    if(parsed.qty!=null)$('#qty').value=parsed.qty;
+    calcItem();renderExistingResults();
+    if(parsed.drug && parsed.qty!=null){
+      status.className='note ocrOk';
+      status.innerHTML=`자동인식: <b>${esc(parsed.drug)}</b> · <b>${parsed.qty}T</b>${parsed.known?' · 기존 약과 자동 매칭':''}<br><span style="font-weight:400">틀리면 아래 입력칸에서 바로 수정할 수 있습니다.</span>`;
+    }else{
+      status.className='note ocrBad';
+      status.textContent='일부만 인식했습니다. 아래 약명/T수를 확인해서 수정해 주세요.';
+    }
+    retry.classList.remove('hidden');
+  }catch(e){
+    console.error(e);
+    status.className='note ocrBad';status.textContent='자동인식에 실패했습니다. 아래 약명과 T수를 직접 입력할 수 있습니다.';retry.classList.remove('hidden');
+  }
+}
+let lastPillEyeFile=null;
+
+async function compressImage(file,maxW=720,quality=.72){
+  return await new Promise((resolve,reject)=>{
+    const im=new Image(),u=URL.createObjectURL(file);
+    im.onload=()=>{
+      const scale=Math.min(1,maxW/im.naturalWidth),w=Math.round(im.naturalWidth*scale),h=Math.round(im.naturalHeight*scale);
+      const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);
+      URL.revokeObjectURL(u);resolve(c.toDataURL('image/jpeg',quality));
+    };
+    im.onerror=reject;im.src=u;
+  });
+}
+function calcItem(){
+  const qty=n($('#qty').value),price=n($('#unitPrice').value),total=qty*price;
+  $('#itemTotal').textContent=won(total);
+  $('#formula').textContent=`${qty}T × ${won(price)} = ${won(total)}`;
+}
+function resetCurrentItem(){
+  currentPhotoData='';
+  $('#pillEyePhoto').value='';$('#pillEyePreview').src='';$('#pillEyePreview').style.display='none';$('#shareStatus').textContent='';$('#ocrStatus').textContent='';$('#retryOcr').classList.add('hidden');lastPillEyeFile=null;
+  $('#drugName').value='';$('#qty').value='';$('#unitPrice').value='';$('#priceHistoryNote').textContent='';
+  calcItem();renderExistingResults();
+}
+function addItem(){
+  const drug=$('#drugName').value.trim(),qty=n($('#qty').value),price=n($('#unitPrice').value);
+  if(!currentPhotoData){alert('PillEye 결과사진을 먼저 올려주세요.');return}
+  if(!drug){alert('약 이름을 입력해 주세요.');return}
+  if(qty<=0){alert('PillEye에서 센 수량(T)을 입력해 주세요.');return}
+
+  draftItems.push({id:uid(),drug,qty,unitPrice:price,total:qty*price,photo:currentPhotoData});
+  savePriceVersion(drug,price,$('#sentDate').value||today());
+  rememberRecent(drug);refreshMaster();renderDraft();resetCurrentItem();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderDraft(){
+  $('#draftItems').innerHTML=draftItems.map((x,i)=>`<div class="itemRow">
+    <div class="row">
+      ${x.photo?`<img class="thumb" src="${x.photo}">`:''}
+      <div class="grow">
+        <div class="itemHead"><span class="badge">${i+1}</span><h3>${esc(x.drug)}</h3></div>
+        <div class="recordItems">${x.qty}T × ${won(x.unitPrice)} = <b>${won(x.total)}</b></div>
+      </div>
+      <button class="secondary editDraft" data-id="${x.id}">수정</button>
+      <button class="danger delDraft" data-id="${x.id}">삭제</button>
+    </div>
+  </div>`).join('') || '<div class="note" style="text-align:center;padding:18px">아직 추가한 약이 없습니다.</div>';
+
+  $('#draftKinds').textContent=draftItems.length+'종';
+  $('#draftQty').textContent=draftItems.reduce((s,x)=>s+x.qty,0)+'T';
+  $('#draftTotal').textContent=won(draftItems.reduce((s,x)=>s+x.total,0));
+
+  $$('.delDraft').forEach(b=>b.onclick=()=>{draftItems=draftItems.filter(x=>x.id!==b.dataset.id);renderDraft()});
+  $$('.editDraft').forEach(b=>b.onclick=()=>{
+    const x=draftItems.find(y=>y.id===b.dataset.id);if(!x)return;
+    currentPhotoData=x.photo||'';$('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display=currentPhotoData?'block':'none';
+    $('#drugName').value=x.drug;$('#qty').value=x.qty;$('#unitPrice').value=x.unitPrice;
+    $('#priceHistoryNote').textContent=priceHistoryText(x.drug)?`약가 이력: ${priceHistoryText(x.drug)}`:'';
+    draftItems=draftItems.filter(y=>y.id!==x.id);renderDraft();calcItem();window.scrollTo({top:0,behavior:'smooth'});
+  });
+}
+function closeBatch(){
+  if(!draftItems.length){alert('반품할 약을 먼저 추가해 주세요.');return}
+  const sentDate=$('#sentDate').value, wholesaler=$('#wholesaler').value.trim();
+  if(!sentDate||!wholesaler){alert('보낸 날짜와 도매상을 입력해 주세요.');return}
+  const total=draftItems.reduce((s,x)=>s+x.total,0);
+  const batch={id:uid(),sentDate,wholesaler,items:JSON.parse(JSON.stringify(draftItems)),sentTotal:total,memo:$('#batchMemo').value.trim(),deductions:[],closedAt:new Date().toISOString()};
+  const rows=load(BATCH,[]);rows.unshift(batch);store(BATCH,rows);
+
+  let w=load(WHOLE,[]);if(!w.includes(wholesaler)){w.push(wholesaler);store(WHOLE,w)}
+  alert(`마감 완료\n${draftItems.length}종 / ${draftItems.reduce((s,x)=>s+x.qty,0)}T / ${won(total)}\n${sentDate} / ${wholesaler}`);
+  draftItems=[];renderDraft();$('#batchMemo').value='';$('#wholesaler').value='';$('#sentDate').value=today();refreshWholesalers();renderRecords();
+}
+function batchStats(b){
+  const deducted=(b.deductions||[]).reduce((s,d)=>s+n(d.amount),0);
+  return {deducted,remain:n(b.sentTotal)-deducted};
+}
+function renderRecords(){
+  const q=$('#search').value.trim().toLowerCase();
+  const rows=load(BATCH,[]).filter(b=>!q||(b.wholesaler||'').toLowerCase().includes(q)||(b.sentDate||'').includes(q)||(b.items||[]).some(i=>(i.drug||'').toLowerCase().includes(q)));
+
+  $('#records').innerHTML=rows.map(b=>{
+    const st=batchStats(b),done=Math.abs(st.remain)<.01;
+    return `<div class="record">
+      <div class="recordTop"><span class="badge ${done?'done':'wait'}">${done?'차감완료':'차감중'}</span><h3>${esc(b.wholesaler)} · ${b.sentDate}</h3></div>
+      <div class="recordItems">${(b.items||[]).map(i=>`${esc(i.drug)} · ${i.qty}T · ${won(i.total)}`).join('<br>')}</div>
+      <div class="moneyPanel">
+        <div class="moneyBox"><small>보낸금액</small><b>${won(b.sentTotal)}</b></div>
+        <div class="moneyBox"><small>빠진금액</small><b>${won(st.deducted)}</b></div>
+        <div class="moneyBox remain"><small>덜 빠진 금액</small><b>${won(st.remain)}</b></div>
+        <div class="moneyBox diff"><small>차이</small><b>${won(st.remain)}</b></div>
+      </div>
+      ${(b.deductions||[]).length?`<div class="deduction"><b>차감 내역</b><br>${b.deductions.map((d,i)=>`${i+1}. ${d.date} · ${won(d.amount)}${d.note?' · '+esc(d.note):''}`).join('<br>')}</div>`:''}
+      ${b.memo?`<div class="note" style="margin-top:7px">메모: ${esc(b.memo)}</div>`:''}
+      <div class="row" style="margin-top:10px">
+        <button class="primary addDeduction" data-id="${b.id}">차감금액 입력</button>
+        <button class="danger delBatch" data-id="${b.id}">삭제</button>
+      </div>
+    </div>`;
+  }).join('') || '<div class="note" style="text-align:center;padding:20px">마감된 반품 기록이 없습니다.</div>';
+
+  $$('.addDeduction').forEach(btn=>btn.onclick=()=>addDeduction(btn.dataset.id));
+  $$('.delBatch').forEach(btn=>btn.onclick=()=>{if(confirm('삭제할까요?')){store(BATCH,load(BATCH,[]).filter(x=>x.id!==btn.dataset.id));renderRecords()}});
+}
+function addDeduction(id){
+  const rows=load(BATCH,[]),b=rows.find(x=>x.id===id);if(!b)return;
+  const st=batchStats(b),date=prompt('차감 날짜',today());if(date===null)return;
+  const amt=prompt(`이번에 실제 빠진 금액\n현재 미차감 ${won(st.remain)}`,st.remain>0?st.remain:'');if(amt===null)return;
+  const amount=n(String(amt).replace(/,/g,''));if(amount<=0){alert('차감금액을 입력해 주세요.');return}
+  const note=prompt('메모(선택)','')??'';
+  b.deductions=b.deductions||[];b.deductions.push({id:uid(),date,amount,note});store(BATCH,rows);renderRecords();
+}
+
+$('#pillEyeBtn').onclick=()=>$('#pillEyePhoto').click();
+$('#pillEyePhoto').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  lastPillEyeFile=f;
+  currentPhotoData=await compressImage(f);
+  $('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display='block';
+  await recognizePillEye(f);
+};
+$('#retryOcr').onclick=()=>{if(lastPillEyeFile)recognizePillEye(lastPillEyeFile)};
+$('#drugName').addEventListener('input',renderExistingResults);
+$('#drugName').addEventListener('change',()=>{
+  const d=$('#drugName').value.trim(),p=getCurrentPrice(d);
+  if(p!=null)$('#unitPrice').value=p;
+  $('#priceHistoryNote').textContent=priceHistoryText(d)?`약가 이력: ${priceHistoryText(d)}`:'';
+  calcItem();
+});
+$('#qty').addEventListener('input',calcItem);
+$('#unitPrice').addEventListener('input',calcItem);
+$('#minusQty').onclick=()=>{$('#qty').value=Math.max(0,n($('#qty').value)-1);calcItem()};
+$('#plusQty').onclick=()=>{$('#qty').value=n($('#qty').value)+1;calcItem()};
+$('#addItem').onclick=addItem;
+$('#newItem').onclick=()=>{resetCurrentItem();window.scrollTo({top:0,behavior:'smooth'})};
+
+$('#closeBatch').onclick=closeBatch;
+$('#resetDraft').onclick=()=>{if(confirm('작성 중인 품목을 모두 지울까요?')){draftItems=[];renderDraft();resetCurrentItem()}};
+$('#search').oninput=renderRecords;
+$('#wholeAdd').onclick=()=>{const x=$('#wholeNew').value.trim();if(!x)return;const w=load(WHOLE,[]);if(!w.includes(x))w.push(x);store(WHOLE,w);$('#wholeNew').value='';refreshWholesalers()};
+
+
+function refreshBackupMeta(){
+  const meta=load(BACKUPMETA,null);
+  $('#lastBackupText').textContent=meta&&meta.at ? new Date(meta.at).toLocaleString('ko-KR') : '없음';
+}
+function makeBackupPayload(){
+  return {
+    app:'낱알반품 관리',
+    version:10,
+    exportedAt:new Date().toISOString(),
+    batches:load(BATCH,[]),
+    master:load(MASTER,{}),
+    priceHistory:load(PRICEHIST,{}),
+    wholesalers:load(WHOLE,[]),
+    recent:load(RECENT,[])
+  };
+}
+function downloadBackup(){
+  const data=makeBackupPayload();
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='낱알반품_전체백업_'+today()+'.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  store(BACKUPMETA,{at:new Date().toISOString(),file:a.download});
+  refreshBackupMeta();
+}
+
+$('#exportBtn').onclick=downloadBackup;
+$('#backupNowBtn').onclick=downloadBackup;
+$('#importBtn').onclick=()=>$('#importFile').click();
+$('#importFile').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(!Array.isArray(d.batches))throw new Error('반품기록 형식이 없습니다.');
+    const msg=`백업일: ${d.exportedAt?new Date(d.exportedAt).toLocaleString('ko-KR'):'알 수 없음'}\n반품 마감 기록: ${d.batches.length}건\n\n현재 휴대폰의 저장자료를 이 백업으로 교체할까요?`;
+    if(!confirm(msg))return;
+    store(BATCH,d.batches);
+    store(MASTER,d.master||{});
+    store(PRICEHIST,d.priceHistory||{});
+    store(WHOLE,d.wholesalers||[]);
+    store(RECENT,d.recent||[]);
+    refreshMaster();refreshWholesalers();renderRecords();resetCurrentItem();
+    alert('백업 복원이 완료되었습니다.');
+  }catch(err){
+    alert('올바른 낱알반품 백업파일이 아닙니다.\n'+(err.message||''));
+  }finally{
+    e.target.value='';
+  }
+};
+
+
+function openShareDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open('pill-return-share-db',1);
+    req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('shares'))db.createObjectStore('shares',{keyPath:'id'})};
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function loadSharedImage(){
+  try{
+    const db=await openShareDB();
+    const item=await new Promise((resolve,reject)=>{
+      const tx=db.transaction('shares','readwrite'),store=tx.objectStore('shares');
+      const get=store.get('latest');
+      get.onsuccess=()=>{
+        const v=get.result;
+        if(v)store.delete('latest');
+        resolve(v);
+      };
+      get.onerror=()=>reject(get.error);
+    });
+    if(!item || !item.blob)return;
+    const file=new File([item.blob],item.name||'PillEye.jpg',{type:item.type||item.blob.type||'image/jpeg'});
+    lastPillEyeFile=file;
+    currentPhotoData=await compressImage(file);
+    $('#pillEyePreview').src=currentPhotoData;
+    $('#pillEyePreview').style.display='block';
+    $('#shareStatus').innerHTML='<b style="color:#087d63">PillEye에서 공유한 사진을 받았습니다.</b> 약명과 T수를 자동으로 읽습니다.';
+    window.scrollTo({top:0,behavior:'smooth'});
+    await recognizePillEye(file);
+  }catch(e){
+    console.error('shared image load failed',e);
+  }
+}
+if('serviceWorker' in navigator){
+  window.addEventListener('load',async()=>{
+    try{
+      await navigator.serviceWorker.register('./service-worker.js');
+      await navigator.serviceWorker.ready;
+      await loadSharedImage();
+    }catch(e){console.error('service worker registration failed',e)}
+  });
+}else{
+  window.addEventListener('load',loadSharedImage);
+}
+
+$('#sentDate').value=today();
+refreshMaster();refreshWholesalers();renderDraft();renderRecords();resetCurrentItem();calcItem();refreshBackupMeta();
+
+</script>
+</body>
+</html>
