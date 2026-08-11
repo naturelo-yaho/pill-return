@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#087d63">
 <link rel="manifest" href="./manifest.webmanifest">
-<title>낱알반품 관리 - 필렌즈 숫자전용</title>
+<title>낱알총금액 관리 - 필렌즈 숫자전용</title>
 <style>
 :root{
   --bg:#f3f6f5;--card:#fff;--ink:#1d2825;--muted:#6d7975;--brand:#087d63;--brand2:#075d4b;
@@ -144,19 +144,100 @@ details summary{cursor:pointer;font-weight:800}
   }
 }
 
+
+/* v36 detail row column alignment */
+.record-detail-head,
+.record-detail-row{
+  display:grid;
+  grid-template-columns: minmax(120px,1.6fr) 56px 84px 96px;
+  gap:10px;
+  align-items:center;
+}
+.record-detail-head{
+  padding:0 0 6px 38px;
+  color:var(--muted);
+  font-size:12px;
+}
+.record-detail-row{
+  padding:10px 0;
+  border-bottom:1px solid #edf1f0;
+}
+.record-detail-row .drug-name{
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.record-detail-row .qty,
+.record-detail-row .unit,
+.record-detail-row .amount{
+  text-align:right;
+  white-space:nowrap;
+}
+.record-detail-row .amount{
+  font-weight:800;
+}
+@media (max-width:600px){
+  .record-detail-head,
+  .record-detail-row{
+    grid-template-columns:minmax(110px,1.5fr) 48px 76px 88px !important;
+    gap:7px !important;
+  }
+  .record-detail-head{
+    padding-left:36px;
+    font-size:11px;
+  }
+  .record-detail-row .drug-name{
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+  .record-detail-row .qty,
+  .record-detail-row .unit,
+  .record-detail-row .amount{
+    grid-column:auto !important;
+    justify-self:stretch !important;
+    text-align:right !important;
+    white-space:nowrap !important;
+  }
+}
+
+
+/* v37 history summary: 날짜 | 도매상 | 총금액 | 빠진금액 한 줄 */
+.record-summary{
+  display:grid !important;
+  grid-template-columns: 1.15fr .9fr 1fr 1fr !important;
+  gap:8px !important;
+  align-items:center !important;
+  width:100% !important;
+}
+.record-summary > *{
+  min-width:0 !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+@media(max-width:600px){
+  .record-summary{
+    grid-template-columns:1.15fr .82fr 1fr 1fr !important;
+    gap:5px !important;
+    font-size:13px !important;
+  }
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v35</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알총금액 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v37</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
 <div class="wrap">
 
 <section class="card" id="inputModeCard">
-  <h2>반품 형태</h2>
+  <h2>총금액 형태</h2>
   <div class="row">
     <button type="button" class="primary" id="modeLoose">낱알</button>
     <button type="button" class="secondary" id="modePTP">PTP</button>
@@ -301,13 +382,13 @@ details summary{cursor:pointer;font-weight:800}
   <textarea id="batchMemo" placeholder="메모" style="margin-top:10px"></textarea>
   <div class="toolbar" style="margin-top:10px">
     <button class="secondary" id="resetDraft">초기화</button>
-    <button class="primary" id="closeBatch">오늘 반품 마감</button>
+    <button class="primary" id="closeBatch">오늘 총금액 마감</button>
   </div>
 </section>
 
 <section class="card">
   <div class="row">
-    <h2 style="margin:0;flex:1">반품 / 차감 내역</h2>
+    <h2 style="margin:0;flex:1">총금액 / 빠진금액 내역</h2>
     <button class="secondary" id="exportBtn">전체 백업</button>
     <button class="secondary" id="importBtn">백업 복원</button>
     <input id="importFile" class="hidden" type="file" accept=".json,application/json">
@@ -530,7 +611,7 @@ function refreshMaster(){
     const drug=decodeURIComponent(b.dataset.drug);
     if(!confirm(`"${drug}"을 저장된 약 데이터베이스에서 삭제할까요?
 
-과거에 마감한 반품 기록은 그대로 남습니다.`))return;
+과거에 마감한 총금액 기록은 그대로 남습니다.`))return;
 
     const master=load(MASTER,{});
     const hist=getPriceHistory();
@@ -1044,14 +1125,19 @@ function renderRecords(){
         <div style="border-top:1px solid var(--line);padding:14px">
           <div class="note" style="margin-bottom:8px">${done?'차감완료':'차감중'} · 품목 ${(b.items||[]).length}종</div>
 
-          <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="margin-top:4px">
+            <div class="record-detail-head">
+              <span>약명</span><span style="text-align:right">수량</span><span style="text-align:right">1T 금액</span><span style="text-align:right">금액</span>
+            </div>
             ${(b.items||[]).map((i,idx)=>`
-              <div style="display:grid;grid-template-columns:28px minmax(100px,1fr) auto auto auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #edf1f0">
-                <span class="badge">${idx+1}</span>
-                <b style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.drug)}</b>
-                <span>${i.qty}T</span>
-                <span>${won(i.unitPrice)}/T</span>
-                <b>${won(i.total)}</b>
+              <div class="record-detail-row">
+                <div class="row" style="gap:7px;min-width:0">
+                  <span class="badge" style="flex:0 0 auto">${idx+1}</span>
+                  <b class="drug-name">${esc(i.drug)}</b>
+                </div>
+                <span class="qty">${i.qty}T</span>
+                <span class="unit">${won(i.unitPrice)}/T</span>
+                <span class="amount">${won(i.total)}</span>
               </div>`).join('')}
           </div>
 
@@ -1063,7 +1149,7 @@ function renderRecords(){
 
           ${(b.deductions||[]).length?`
             <div class="deduction" style="margin-top:10px">
-              <b>차감 내역</b><br>
+              <b>빠진금액 내역</b><br>
               ${b.deductions.map((d,i)=>`${i+1}. ${d.date} · ${won(d.amount)}${d.note?' · '+esc(d.note):''}`).join('<br>')}
             </div>`:''}
 
@@ -1075,13 +1161,13 @@ function renderRecords(){
           </div>
         </div>
       </details>`;
-  }).join('')||'<div class="note" style="text-align:center;padding:18px">마감된 반품 기록이 없습니다.</div>';
+  }).join('')||'<div class="note" style="text-align:center;padding:18px">마감된 총금액 기록이 없습니다.</div>';
 
   $$('.addDeduction').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id,arr=load(BATCH,[]),batch=arr.find(x=>x.id===id);if(!batch)return;
     const amount=n(prompt('이번에 실제로 빠진 금액(원)을 입력하세요.','0'));
     if(amount<=0)return;
-    const date=prompt('차감 날짜',today())||today();
+    const date=prompt('빠진금액 날짜',today())||today();
     const note=prompt('메모(선택)','')||'';
     batch.deductions=batch.deductions||[];
     batch.deductions.push({date,amount,note});
@@ -1089,15 +1175,15 @@ function renderRecords(){
   });
 
   $$('.delBatch').forEach(b=>b.onclick=()=>{
-    if(!confirm('이 반품 기록을 삭제할까요?'))return;
+    if(!confirm('이 총금액 기록을 삭제할까요?'))return;
     store(BATCH,load(BATCH,[]).filter(x=>x.id!==b.dataset.id));
     renderRecords();
   });
 }
 function addDeduction(id){
   const rows=load(BATCH,[]),b=rows.find(x=>x.id===id);if(!b)return;
-  const st=batchStats(b),date=prompt('차감 날짜',today());if(date===null)return;
-  const amt=prompt(`이번에 실제 빠진 금액\n현재 미차감 ${won(st.remain)}`,st.remain>0?st.remain:'');if(amt===null)return;
+  const st=batchStats(b),date=prompt('빠진금액 날짜',today());if(date===null)return;
+  const amt=prompt(`이번에 실제 빠진 금액\n현재 미빠진금액 ${won(st.remain)}`,st.remain>0?st.remain:'');if(amt===null)return;
   const amount=n(String(amt).replace(/,/g,''));if(amount<=0){alert('차감금액을 입력해 주세요.');return}
   const note=prompt('메모(선택)','')??'';
   b.deductions=b.deductions||[];b.deductions.push({id:uid(),date,amount,note});store(BATCH,rows);renderRecords();
@@ -1165,7 +1251,7 @@ function refreshBackupMeta(){
 }
 function makeBackupPayload(){
   return {
-    app:'낱알반품 관리',
+    app:'낱알총금액 관리',
     version:10,
     exportedAt:new Date().toISOString(),
     batches:load(BATCH,[]),
@@ -1196,7 +1282,7 @@ $('#importFile').onchange=async e=>{
   try{
     const d=JSON.parse(await f.text());
     if(!Array.isArray(d.batches))throw new Error('반품기록 형식이 없습니다.');
-    const msg=`백업일: ${d.exportedAt?new Date(d.exportedAt).toLocaleString('ko-KR'):'알 수 없음'}\n반품 마감 기록: ${d.batches.length}건\n\n현재 휴대폰의 저장자료를 이 백업으로 교체할까요?`;
+    const msg=`백업일: ${d.exportedAt?new Date(d.exportedAt).toLocaleString('ko-KR'):'알 수 없음'}\n총금액 마감 기록: ${d.batches.length}건\n\n현재 휴대폰의 저장자료를 이 백업으로 교체할까요?`;
     if(!confirm(msg))return;
     store(BATCH,d.batches);
     store(MASTER,d.master||{});
@@ -1207,7 +1293,7 @@ $('#importFile').onchange=async e=>{
     refreshMaster();refreshWholesalers();renderRecords();resetCurrentItem();
     alert('백업 복원이 완료되었습니다.');
   }catch(err){
-    alert('올바른 낱알반품 백업파일이 아닙니다.\n'+(err.message||''));
+    alert('올바른 낱알총금액 백업파일이 아닙니다.\n'+(err.message||''));
   }finally{
     e.target.value='';
   }
