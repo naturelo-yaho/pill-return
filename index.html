@@ -81,7 +81,7 @@ details summary{cursor:pointer;font-weight:800}
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v28</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v29</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -98,6 +98,33 @@ details summary{cursor:pointer;font-weight:800}
     사진은 필요 없습니다. 아래에서 <b>약 이름 · 총 수량(T) · 1T당 금액</b>만 입력하세요.
   </div>
 </section>
+
+<section class="card hidden" id="ptpEntryCard">
+  <h2>PTP 약 입력</h2>
+  <div style="display:grid;gap:12px">
+    <div>
+      <label>약 이름</label>
+      <input id="ptpDrugName" list="drugMaster" autocomplete="off" placeholder="예: 씨잘정 5mg">
+      <div id="ptpExistingResults" class="quickList"></div>
+    </div>
+    <div>
+      <label>수량(T)</label>
+      <input id="ptpQty" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 155">
+    </div>
+    <div>
+      <label>1T당 반품금액(원)</label>
+      <input id="ptpUnitPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="예: 23">
+      <div id="ptpPriceHistoryNote" class="note" style="margin-top:6px"></div>
+    </div>
+  </div>
+  <div class="totalBox">
+    <div class="note">이 PTP 약 반품금액</div>
+    <b id="ptpItemTotal">0원</b>
+    <div class="note" id="ptpFormula"></div>
+  </div>
+  <button class="primary" type="button" id="ptpAddItem" style="width:100%;margin-top:10px">PTP 약 추가 완료</button>
+</section>
+
 <section class="card" id="loosePhotoSection">
   <h2>1. 필렌즈 계수사진</h2>
   <div class="upload">
@@ -124,7 +151,7 @@ details summary{cursor:pointer;font-weight:800}
   </div>
 </section>
 
-<section class="card">
+<section class="card" id="commonItemCard">
   <h2>2. 약 이름 / 수량 / 가격</h2>
 
   <label>약 이름</label>
@@ -595,29 +622,58 @@ function calcItem(){
   $('#itemTotal').textContent=won(total);
   $('#formula').textContent=`${qty}T × ${won(price)} = ${won(total)}`;
 }
-function resetCurrentItem(){
-  inputMode='loose'; setTimeout(applyInputMode,0);
+function resetCurrentItem(keepMode=true){
+  const prevMode=inputMode||'loose';
   countShots=[]; if($('#shotList'))renderCountShots();
   currentPhotoData='';
-  $('#pillEyePhoto').value='';$('#pillEyePreview').src='';$('#pillEyePreview').style.display='none';$('#shareStatus').textContent='';$('#ocrStatus').textContent='';lastPillensFile=null;countParts=[];
-  $('#drugName').value='';$('#qty').value='';$('#unitPrice').value='';$('#priceHistoryNote').textContent='';
+  if($('#pillEyePhoto'))$('#pillEyePhoto').value='';
+  if($('#pillEyePreview')){$('#pillEyePreview').src='';$('#pillEyePreview').style.display='none';}
+  if($('#shareStatus'))$('#shareStatus').textContent='';
+  if($('#ocrStatus'))$('#ocrStatus').textContent='';
+  lastPillensFile=null;countParts=[];
+
+  if($('#drugName'))$('#drugName').value='';
+  if($('#qty'))$('#qty').value='';
+  if($('#unitPrice'))$('#unitPrice').value='';
+  if($('#priceHistoryNote'))$('#priceHistoryNote').textContent='';
+
+  if($('#ptpDrugName'))$('#ptpDrugName').value='';
+  if($('#ptpQty'))$('#ptpQty').value='';
+  if($('#ptpUnitPrice'))$('#ptpUnitPrice').value='';
+  if($('#ptpPriceHistoryNote'))$('#ptpPriceHistoryNote').textContent='';
+  if($('#ptpItemTotal'))$('#ptpItemTotal').textContent='0원';
+  if($('#ptpFormula'))$('#ptpFormula').textContent='';
+
+  if(keepMode) inputMode=prevMode; else inputMode='loose';
+  applyInputMode();
   calcItem();renderExistingResults();
 }
 function addItem(){
   const drug=$('#drugName').value.trim(),qty=n($('#qty').value),price=n($('#unitPrice').value);
-  if(inputMode==='loose' && !currentPhotoData){alert('필렌즈 계수사진을 먼저 선택해 주세요.');return}
+  if(!currentPhotoData){alert('필렌즈 계수사진을 먼저 선택해 주세요.');return}
   if(!drug){alert('약 이름을 입력해 주세요.');return}
-  if(qty<=0){alert(inputMode==='loose'?'필렌즈에서 센 수량(T)을 입력해 주세요.':'PTP 수량(T)을 입력해 주세요.');return}
+  if(qty<=0){alert('필렌즈에서 센 수량(T)을 입력해 주세요.');return}
 
-  draftItems.push({id:uid(),drug,qty,unitPrice:price,total:qty*price,photo:inputMode==='ptp'?'':currentPhotoData,countShots:inputMode==='ptp'?[]:JSON.parse(JSON.stringify(countShots)),inputMode});
+  draftItems.push({
+    id:uid(),drug,qty,unitPrice:price,total:qty*price,
+    photo:currentPhotoData,
+    countShots:JSON.parse(JSON.stringify(countShots)),
+    inputMode:'loose'
+  });
   savePriceVersion(drug,price,$('#sentDate').value||today());
-  rememberRecent(drug);refreshMaster();renderDraft();resetCurrentItem();
-  window.scrollTo({top:0,behavior:'smooth'});
+  rememberRecent(drug);refreshMaster();renderDraft();
+  resetCurrentItem(true);
+
+  // 여러 품목을 연속 입력하기 위한 다음 약 입력 위치로 이동
+  setTimeout(()=>{
+    const target=$('#inputModeCard');
+    if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+  },50);
 }
 function renderDraft(){
   $('#draftItems').innerHTML=draftItems.map((x,i)=>`<div class="itemRow">
     <div class="row">
-      ${x.photo?`<img class="thumb" src="${x.photo}">`:''}
+      ${(!x.countShots||!x.countShots.length)&&x.photo?`<img class="thumb" src="${x.photo}">`:''}
       <div class="grow">
         <div class="itemHead"><span class="badge">${i+1}</span><h3>${esc(x.drug)}${x.inputMode==="ptp"?` <span class="pill">PTP</span>`:""}</h3></div>
         <div class="recordItems">${x.qty}T × ${won(x.unitPrice)} = <b>${won(x.total)}</b></div>
@@ -640,10 +696,18 @@ function renderDraft(){
   $$('.editDraft').forEach(b=>b.onclick=()=>{
     const x=draftItems.find(y=>y.id===b.dataset.id);if(!x)return;
     inputMode=x.inputMode==='ptp'?'ptp':'loose';applyInputMode();
-    currentPhotoData=x.photo||'';countShots=JSON.parse(JSON.stringify(x.countShots||[]));countParts=countShots.map(s=>Number(s.qty)||0);renderCountShots();$('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display=currentPhotoData?'block':'none';
-    $('#drugName').value=x.drug;$('#qty').value=x.qty;$('#unitPrice').value=x.unitPrice;
-    $('#priceHistoryNote').textContent=priceHistoryText(x.drug)?`약가 이력: ${priceHistoryText(x.drug)}`:'';
-    draftItems=draftItems.filter(y=>y.id!==x.id);renderDraft();calcItem();window.scrollTo({top:0,behavior:'smooth'});
+    if(inputMode==='ptp'){
+      $('#ptpDrugName').value=x.drug;$('#ptpQty').value=x.qty;$('#ptpUnitPrice').value=x.unitPrice;
+      $('#ptpPriceHistoryNote').textContent=priceHistoryText(x.drug)?`약가 이력: ${priceHistoryText(x.drug)}`:'';
+      calcPtpItem();
+    }else{
+      currentPhotoData=x.photo||'';countShots=JSON.parse(JSON.stringify(x.countShots||[]));countParts=countShots.map(s=>Number(s.qty)||0);renderCountShots();$('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display=currentPhotoData?'block':'none';
+      $('#drugName').value=x.drug;$('#qty').value=x.qty;$('#unitPrice').value=x.unitPrice;
+      $('#priceHistoryNote').textContent=priceHistoryText(x.drug)?`약가 이력: ${priceHistoryText(x.drug)}`:'';
+      calcItem();
+    }
+    draftItems=draftItems.filter(y=>y.id!==x.id);renderDraft();
+    setTimeout(()=>$('#inputModeCard')?.scrollIntoView({behavior:'smooth',block:'start'}),50);
   });
 }
 function closeBatch(){
@@ -690,7 +754,7 @@ if($('#forceUpdateBtn')){
         s.textContent='새 버전 발견. 적용 중…';
         reg.waiting.postMessage({type:'SKIP_WAITING'});
       }else{
-        s.textContent='현재 최신 버전입니다. (v25)';
+        s.textContent='현재 최신 버전입니다. (v29)';
       }
     }catch(e){
       s.textContent='업데이트 확인 실패: '+(e.message||e);
@@ -715,41 +779,77 @@ renderCountShots();
 
 
 let inputMode='loose';
+
+function renderPtpExistingResults(){
+  if(!$('#ptpExistingResults')||!$('#ptpDrugName'))return;
+  const q=$('#ptpDrugName').value.trim().toLowerCase();
+  const all=Object.keys(load(MASTER,{})), recent=load(RECENT,[]);
+  const list=q?all.filter(x=>x.toLowerCase().includes(q)).slice(0,12):recent.filter(x=>all.includes(x)).slice(0,8);
+  $('#ptpExistingResults').innerHTML=list.map(x=>`<button type="button" class="quick ptpExistingPick" data-drug="${encodeURIComponent(x)}"><strong>${esc(x)}</strong> · ${won(getCurrentPrice(x))}/T</button>`).join('');
+  $$('.ptpExistingPick').forEach(b=>b.onclick=()=>{
+    const drug=decodeURIComponent(b.dataset.drug);
+    $('#ptpDrugName').value=drug;
+    const p=getCurrentPrice(drug);
+    $('#ptpUnitPrice').value=p==null?'':p;
+    $('#ptpPriceHistoryNote').textContent=priceHistoryText(drug)?`약가 이력: ${priceHistoryText(drug)}`:'';
+    calcPtpItem();
+  });
+}
+
+function calcPtpItem(){
+  if(!$('#ptpQty'))return;
+  const qty=n($('#ptpQty').value),price=n($('#ptpUnitPrice').value),total=qty*price;
+  $('#ptpItemTotal').textContent=won(total);
+  $('#ptpFormula').textContent=`${qty}T × ${won(price)} = ${won(total)}`;
+}
+
+function addPtpItem(){
+  const drug=$('#ptpDrugName').value.trim();
+  const qty=n($('#ptpQty').value),price=n($('#ptpUnitPrice').value);
+  if(!drug){alert('약 이름을 입력해 주세요.');return}
+  if(qty<=0){alert('PTP 수량(T)을 입력해 주세요.');return}
+
+  draftItems.push({
+    id:uid(),drug,qty,unitPrice:price,total:qty*price,
+    photo:'',countShots:[],inputMode:'ptp'
+  });
+  savePriceVersion(drug,price,$('#sentDate').value||today());
+  rememberRecent(drug);refreshMaster();renderDraft();
+  resetCurrentItem(true);
+
+  setTimeout(()=>{
+    const target=$('#inputModeCard');
+    if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+  },50);
+}
+
 function applyInputMode(){
   const loose=inputMode==='loose';
-
   const looseBtn=$('#modeLoose'),ptpBtn=$('#modePTP');
   if(looseBtn)looseBtn.className=loose?'primary':'secondary';
   if(ptpBtn)ptpBtn.className=!loose?'primary':'secondary';
 
-  const photo=$('#loosePhotoSection'),shots=$('#shotHistoryCard'),help=$('#ptpHelp');
-  if(photo)photo.style.display=loose?'':'none';
-  if(shots)shots.style.display=loose?'':'none';
-  if(help)help.classList.toggle('hidden',loose);
+  if($('#loosePhotoSection'))$('#loosePhotoSection').classList.toggle('hidden',!loose);
+  if($('#shotHistoryCard'))$('#shotHistoryCard').classList.toggle('hidden',!loose);
+  if($('#commonItemCard'))$('#commonItemCard').classList.toggle('hidden',!loose);
+  if($('#ptpEntryCard'))$('#ptpEntryCard').classList.toggle('hidden',loose);
+  if($('#ptpHelp'))$('#ptpHelp').classList.add('hidden');
 
-  if($('#qtyLabel'))$('#qtyLabel').textContent=loose?'필렌즈에서 센 수량(T)':'PTP 수량(T)';
-  if($('#addItem'))$('#addItem').textContent=loose?'이 약 추가 완료':'PTP 약 추가 완료';
-
-  if(!loose){
-    // PTP는 사진/계수정보가 필요 없으므로 깨끗하게 비움
-    currentPhotoData='';
-    countShots=[];
-    countParts=[];
-    if($('#pillEyePreview')){$('#pillEyePreview').src='';$('#pillEyePreview').style.display='none';}
-    if($('#shareStatus'))$('#shareStatus').textContent='';
-  }
+  renderDraft();
 }
-if($('#modeLoose'))$('#modeLoose').onclick=()=>{
-  inputMode='loose';
-  applyInputMode();
-  renderDraft();
-};
-if($('#modePTP'))$('#modePTP').onclick=()=>{
-  inputMode='ptp';
-  countShots=[];countParts=[];currentPhotoData='';renderCountShots();
-  applyInputMode();
-  renderDraft();
-};
+
+if($('#modeLoose'))$('#modeLoose').onclick=()=>{inputMode='loose';applyInputMode()};
+if($('#modePTP'))$('#modePTP').onclick=()=>{inputMode='ptp';applyInputMode()};
+if($('#ptpDrugName'))$('#ptpDrugName').addEventListener('input',()=>{
+  renderPtpExistingResults();
+  const d=$('#ptpDrugName').value.trim(),p=getCurrentPrice(d);
+  if(p!=null && !$('#ptpUnitPrice').value)$('#ptpUnitPrice').value=p;
+  $('#ptpPriceHistoryNote').textContent=priceHistoryText(d)?`약가 이력: ${priceHistoryText(d)}`:'';
+  calcPtpItem();
+});
+if($('#ptpQty'))$('#ptpQty').addEventListener('input',calcPtpItem);
+if($('#ptpUnitPrice'))$('#ptpUnitPrice').addEventListener('input',calcPtpItem);
+if($('#ptpAddItem'))$('#ptpAddItem').onclick=addPtpItem;
 applyInputMode();
 
 
@@ -857,7 +957,10 @@ $('#unitPrice').addEventListener('input',calcItem);
 $('#minusQty').onclick=()=>{$('#qty').value=Math.max(0,n($('#qty').value)-1);calcItem()};
 $('#plusQty').onclick=()=>{$('#qty').value=n($('#qty').value)+1;calcItem()};
 $('#addItem').onclick=addItem;
-$('#newItem').onclick=()=>{resetCurrentItem();window.scrollTo({top:0,behavior:'smooth'})};
+$('#newItem').onclick=()=>{
+      resetCurrentItem(true);
+      setTimeout(()=>$('#inputModeCard')?.scrollIntoView({behavior:'smooth',block:'start'}),50);
+    };
 
 $('#closeBatch').onclick=closeBatch;
 $('#resetDraft').onclick=()=>{if(confirm('작성 중인 품목을 모두 지울까요?')){draftItems=[];renderDraft();resetCurrentItem()}};
@@ -1185,7 +1288,7 @@ if('serviceWorker' in navigator){
 }
 
 $('#sentDate').value=today();
-refreshMaster();refreshWholesalers();renderDraft();renderRecords();resetCurrentItem();calcItem();refreshBackupMeta();
+refreshMaster();refreshWholesalers();renderDraft();renderRecords();resetCurrentItem(true);calcItem();refreshBackupMeta();
 
 </script>
 </body>
