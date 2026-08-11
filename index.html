@@ -81,7 +81,7 @@ details summary{cursor:pointer;font-weight:800}
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v31</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v34</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -257,8 +257,9 @@ details summary{cursor:pointer;font-weight:800}
 
 <section class="card">
   <details>
-    <summary>약가표 / 도매상 관리</summary>
-    <div class="note" style="margin-top:10px">한 번 등록한 약명과 가격은 다음부터 자동으로 사용합니다.</div>
+    <summary>저장된 약 데이터베이스 / 도매상 관리</summary>
+    <div class="note" style="margin-top:10px">저장된 약의 이름과 최근 가격을 수정하거나, 필요 없는 약을 삭제할 수 있습니다. 과거 마감 기록은 삭제되지 않습니다.</div>
+    <input id="masterSearch" class="search" placeholder="저장된 약 검색" style="margin-top:10px">
     <div id="masterList"></div>
     <div class="hr"></div>
     <div class="row">
@@ -378,23 +379,103 @@ function rememberRecent(drug){
 
 function refreshMaster(){
   const m=load(MASTER,{});
-  $('#drugMaster').innerHTML=Object.keys(m).sort().map(x=>`<option value="${esc(x)}"></option>`).join('');
-  $('#masterList').innerHTML=Object.keys(m).sort().map(drug=>`
-    <div style="border-top:1px solid #dbe4e1;padding:9px 0">
-      <div class="row">
-        <span class="grow"><b>${esc(drug)}</b></span>
-        <b>${won(getCurrentPrice(drug))}/T</b>
-        <button class="secondary priceEdit" data-drug="${encodeURIComponent(drug)}">약가변경</button>
-      </div>
-      ${priceHistoryText(drug)?`<div class="note">약가이력: ${esc(priceHistoryText(drug))}</div>`:''}
-    </div>`).join('') || '<div class="note">등록된 약이 없습니다.</div>';
+  const q=$('#masterSearch')?$('#masterSearch').value.trim().toLowerCase():'';
+  const drugs=Object.keys(m)
+    .filter(x=>!q||x.toLowerCase().includes(q))
+    .sort((a,b)=>a.localeCompare(b,'ko'));
 
-  $$('.priceEdit').forEach(b=>b.onclick=()=>{
-    const drug=decodeURIComponent(b.dataset.drug), old=getCurrentPrice(drug);
-    const val=prompt(`${drug}\n새 1T 가격`,old??'');if(val===null)return;
-    const d=prompt('적용일 (YYYY-MM-DD)',today());if(d===null)return;
-    savePriceVersion(drug,n(String(val).replace(/,/g,'')),d||today());refreshMaster();
+  $('#drugMaster').innerHTML=drugs.map(x=>`<option value="${esc(x)}"></option>`).join('');
+
+  $('#masterList').innerHTML=drugs.map(drug=>`
+    <div style="border-top:1px solid #dbe4e1;padding:11px 0">
+      <div class="row" style="align-items:center">
+        <div class="grow" style="min-width:160px">
+          <b style="font-size:15px">${esc(drug)}</b>
+          <div class="note" style="margin-top:3px">최근 가격: <b>${won(getCurrentPrice(drug))}/T</b></div>
+        </div>
+        <button type="button" class="secondary drugEdit" data-drug="${encodeURIComponent(drug)}">수정</button>
+        <button type="button" class="danger drugDelete" data-drug="${encodeURIComponent(drug)}">삭제</button>
+      </div>
+      ${priceHistoryText(drug)?`<div class="note" style="margin-top:5px">약가 이력: ${esc(priceHistoryText(drug))}</div>`:''}
+    </div>`).join('') || '<div class="note" style="padding:12px 0">저장된 약이 없습니다.</div>';
+
+  $$('.drugEdit').forEach(b=>b.onclick=()=>{
+    const oldDrug=decodeURIComponent(b.dataset.drug);
+    const oldPrice=getCurrentPrice(oldDrug);
+
+    const newDrugRaw=prompt('약 이름 수정',oldDrug);
+    if(newDrugRaw===null)return;
+    const newDrug=newDrugRaw.trim();
+    if(!newDrug){alert('약 이름을 입력해 주세요.');return}
+
+    const newPriceRaw=prompt('1T당 반품금액(원)',oldPrice??'');
+    if(newPriceRaw===null)return;
+    const newPrice=n(String(newPriceRaw).replace(/,/g,''));
+    if(newPrice<0){alert('가격을 확인해 주세요.');return}
+
+    const master=load(MASTER,{});
+    const hist=getPriceHistory();
+    const recent=load(RECENT,[]);
+
+    // 이름이 바뀌면 저장된 마스터/가격이력을 새 이름으로 이동한다.
+    if(newDrug!==oldDrug){
+      if(master[newDrug]!=null && !confirm(`이미 "${newDrug}"이라는 약이 저장되어 있습니다.
+기존 "${newDrug}" 데이터에 합칠까요?`))return;
+
+      delete master[oldDrug];
+      master[newDrug]=newPrice;
+
+      const oldHist=hist[oldDrug]||[];
+      const newHist=hist[newDrug]||[];
+      hist[newDrug]=[...newHist,...oldHist].sort((a,b)=>String(a.effectiveDate||'').localeCompare(String(b.effectiveDate||'')));
+      delete hist[oldDrug];
+
+      const nextRecent=recent.map(x=>x===oldDrug?newDrug:x).filter((x,i,a)=>a.indexOf(x)===i);
+      store(RECENT,nextRecent);
+    }else{
+      master[oldDrug]=newPrice;
+    }
+
+    store(MASTER,master);
+    store(PRICEHIST,hist);
+    savePriceVersion(newDrug,newPrice,today());
+
+    // 작성 중 목록에 같은 약이 있으면 이름/가격도 함께 갱신할지 선택
+    const affected=draftItems.filter(x=>x.drug===oldDrug);
+    if(affected.length && confirm(`작성 중인 반품목록에 "${oldDrug}"이 ${affected.length}건 있습니다.
+새 이름/가격으로 같이 바꿀까요?`)){
+      draftItems.forEach(x=>{
+        if(x.drug===oldDrug){
+          x.drug=newDrug;
+          x.unitPrice=newPrice;
+          x.total=x.qty*newPrice;
+        }
+      });
+      saveDraft();renderDraft();
+    }
+
+    refreshMaster();
+    renderExistingResults();
   });
+
+  $$('.drugDelete').forEach(b=>b.onclick=()=>{
+    const drug=decodeURIComponent(b.dataset.drug);
+    if(!confirm(`"${drug}"을 저장된 약 데이터베이스에서 삭제할까요?
+
+과거에 마감한 반품 기록은 그대로 남습니다.`))return;
+
+    const master=load(MASTER,{});
+    const hist=getPriceHistory();
+    delete master[drug];
+    delete hist[drug];
+    store(MASTER,master);
+    store(PRICEHIST,hist);
+    store(RECENT,load(RECENT,[]).filter(x=>x!==drug));
+
+    refreshMaster();
+    renderExistingResults();
+  });
+
   renderExistingResults();
 }
 
@@ -666,46 +747,25 @@ function addItem(){
 function renderDraft(){
   saveDraft();
 
-  const rows = draftItems.map((x,i)=>`
-    <div class="itemRow" style="padding:14px">
-      <div class="row" style="align-items:flex-start;gap:12px">
-        ${(!x.countShots||!x.countShots.length)&&x.photo?`<img class="thumb" src="${x.photo}">`:''}
-        <div class="grow" style="min-width:0">
-          <div class="itemHead">
-            <span class="badge">${i+1}</span>
-            <h3 style="font-size:16px">${esc(x.drug)}</h3>
-            ${x.inputMode==="ptp"?`<span class="badge">PTP</span>`:`<span class="badge">낱알</span>`}
-          </div>
-
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px">
-            <div class="sum"><small>수량</small><b>${x.qty}T</b></div>
-            <div class="sum"><small>1T 금액</small><b>${won(x.unitPrice)}</b></div>
-            <div class="sum"><small>품목 금액</small><b>${won(x.total)}</b></div>
-          </div>
-
-          ${x.countShots&&x.countShots.length?`
-            <div class="note" style="margin-top:8px">
-              ${x.countShots.length>1
-                ? `계수 합산: ${x.countShots.map(s=>s.qty).join(' + ')} = ${x.qty}T`
-                : `계수사진 1장 · ${x.qty}T`}
-            </div>
-            <div style="display:flex;gap:8px;overflow-x:auto;margin-top:7px">
-              ${x.countShots.map((s,n)=>`
-                <div style="min-width:76px;text-align:center">
-                  <img src="${s.photo}" style="width:76px;height:76px;object-fit:contain;border-radius:10px;background:#111;display:block">
-                  ${x.countShots.length>1?`<div style="font-size:12px;font-weight:700;margin-top:4px">${n+1}차 · ${s.qty}T</div>`:''}
-                </div>`).join('')}
-            </div>`:''}
+  const rows=draftItems.map((x,i)=>`
+    <div class="itemRow" style="padding:10px 12px">
+      <div style="display:grid;grid-template-columns:28px minmax(110px,1fr) auto auto auto auto;gap:8px;align-items:center">
+        <span class="badge" style="min-width:28px;text-align:center">${i+1}</span>
+        <div style="min-width:0">
+          <b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.drug)}</b>
+          <small style="color:var(--muted)">${x.inputMode==='ptp'?'PTP':'낱알'}${x.countShots&&x.countShots.length>1?' · '+x.countShots.length+'장 합산':''}</small>
         </div>
-
-        <div style="display:flex;flex-direction:column;gap:7px">
-          <button class="secondary editDraft" data-id="${x.id}">수정</button>
-          <button class="danger delDraft" data-id="${x.id}">삭제</button>
+        <b style="white-space:nowrap">${x.qty}T</b>
+        <span style="white-space:nowrap">${won(x.unitPrice)}/T</span>
+        <b style="white-space:nowrap">${won(x.total)}</b>
+        <div style="display:flex;gap:5px">
+          <button class="secondary editDraft" data-id="${x.id}" style="padding:8px 10px">수정</button>
+          <button class="danger delDraft" data-id="${x.id}" style="padding:8px 10px">삭제</button>
         </div>
       </div>
     </div>`).join('');
 
-  $('#draftItems').innerHTML = rows || '<div class="note" style="text-align:center;padding:18px">아직 추가한 약이 없습니다.</div>';
+  $('#draftItems').innerHTML=rows||'<div class="note" style="text-align:center;padding:18px">아직 추가한 약이 없습니다.</div>';
 
   $('#draftKinds').textContent=draftItems.length+'종';
   $('#draftQty').textContent=draftItems.reduce((s,x)=>s+x.qty,0)+'T';
@@ -720,8 +780,12 @@ function renderDraft(){
       $('#ptpPriceHistoryNote').textContent=priceHistoryText(x.drug)?`약가 이력: ${priceHistoryText(x.drug)}`:'';
       calcPtpItem();
     }else{
-      currentPhotoData=x.photo||'';countShots=JSON.parse(JSON.stringify(x.countShots||[]));countParts=countShots.map(s=>Number(s.qty)||0);renderCountShots();
-      $('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display=currentPhotoData?'block':'none';
+      currentPhotoData=x.photo||'';
+      countShots=JSON.parse(JSON.stringify(x.countShots||[]));
+      countParts=countShots.map(s=>Number(s.qty)||0);
+      renderCountShots();
+      $('#pillEyePreview').src=currentPhotoData;
+      $('#pillEyePreview').style.display=currentPhotoData?'block':'none';
       $('#drugName').value=x.drug;$('#qty').value=x.qty;$('#unitPrice').value=x.unitPrice;
       $('#priceHistoryNote').textContent=priceHistoryText(x.drug)?`약가 이력: ${priceHistoryText(x.drug)}`:'';
       calcItem();
@@ -774,7 +838,7 @@ if($('#forceUpdateBtn')){
         s.textContent='새 버전 발견. 적용 중…';
         reg.waiting.postMessage({type:'SKIP_WAITING'});
       }else{
-        s.textContent='현재 최신 버전입니다. (v31)';
+        s.textContent='현재 최신 버전입니다. (v34)';
       }
     }catch(e){
       s.textContent='업데이트 확인 실패: '+(e.message||e);
@@ -892,47 +956,109 @@ function batchStats(b){
     extra:Math.max(deducted-sent,0)
   };
 }
+
+function openItemPhotos(batchId,itemIndex){
+  const batch=load(BATCH,[]).find(b=>b.id===batchId); if(!batch)return;
+  const item=(batch.items||[])[Number(itemIndex)]; if(!item)return;
+
+  const shots=(item.countShots&&item.countShots.length)
+    ? item.countShots
+    : (item.photo?[{qty:item.qty,photo:item.photo}]:[]);
+
+  $('#photoModalTitle').textContent=`${item.drug} · 사진 ${shots.length}장`;
+  $('#photoModalBody').innerHTML=shots.length
+    ? shots.map((s,i)=>`
+        <div style="border:1px solid var(--line);border-radius:14px;padding:10px">
+          <div style="font-weight:800;margin-bottom:8px">${shots.length>1?`${i+1}차 · `:''}${s.qty||''}${s.qty?'T':''}</div>
+          <img src="${s.photo}" style="width:100%;max-height:70vh;object-fit:contain;background:#111;border-radius:12px;display:block">
+        </div>`).join('')
+    : '<div class="note" style="padding:20px;text-align:center">저장된 사진이 없습니다.</div>';
+
+  $('#photoModal').classList.remove('hidden');
+}
+if($('#photoModalClose'))$('#photoModalClose').onclick=()=>$('#photoModal').classList.add('hidden');
+if($('#photoModal'))$('#photoModal').onclick=e=>{if(e.target.id==='photoModal')$('#photoModal').classList.add('hidden')};
+
 function renderRecords(){
   const q=$('#search').value.trim().toLowerCase();
-  const rows=load(BATCH,[]).filter(b=>!q||(b.wholesaler||'').toLowerCase().includes(q)||(b.sentDate||'').includes(q)||(b.items||[]).some(i=>(i.drug||'').toLowerCase().includes(q)));
+  const rows=load(BATCH,[])
+    .filter(b=>!q||(b.wholesaler||'').toLowerCase().includes(q)||(b.sentDate||'').includes(q)||(b.items||[]).some(i=>(i.drug||'').toLowerCase().includes(q)))
+    .sort((a,b)=>String(b.sentDate||'').localeCompare(String(a.sentDate||'')));
 
   $('#records').innerHTML=rows.map(b=>{
     const st=batchStats(b),done=st.remain<.01;
-    return `<div class="record">
-      <div class="recordTop"><span class="badge ${done?'done':'wait'}">${done?'차감완료':'차감중'}</span><h3>${esc(b.wholesaler)} · ${b.sentDate}</h3></div>
-      <div class="recordItems" style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
-        ${(b.items||[]).map((i,idx)=>`
-          <div style="border:1px solid var(--line);border-radius:12px;padding:10px;background:#fafcfc">
-            <div class="row">
-              <span class="badge">${idx+1}</span>
-              <b style="flex:1">${esc(i.drug)}</b>
-              <span class="badge">${i.inputMode==='ptp'?'PTP':'낱알'}</span>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px">
-              <div class="sum"><small>수량</small><b>${i.qty}T</b></div>
-              <div class="sum"><small>1T 금액</small><b>${won(i.unitPrice)}</b></div>
-              <div class="sum"><small>금액</small><b>${won(i.total)}</b></div>
-            </div>
-            ${i.countShots&&i.countShots.length>1?`<div class="note" style="margin-top:6px">계수 합산: ${i.countShots.map(s=>s.qty).join(' + ')} = ${i.qty}T</div>`:''}
-          </div>`).join('')}
-      </div>
-      <div class="moneyPanel">
-        <div class="moneyBox"><small>보낸금액</small><b>${won(b.sentTotal)}</b></div>
-        <div class="moneyBox"><small>실제 차감</small><b>${won(st.deducted)}</b></div>
-        <div class="moneyBox remain"><small>아직 덜 빠진 금액</small><b>${won(st.remain)}</b></div>
-        <div class="moneyBox diff"><small>차이</small><b>${st.diff>0?'+':''}${won(st.diff)}</b></div>
-      </div>
-      ${(b.deductions||[]).length?`<div class="deduction"><b>차감 내역</b><br>${b.deductions.map((d,i)=>`${i+1}. ${d.date} · ${won(d.amount)}${d.note?' · '+esc(d.note):''}`).join('<br>')}</div>`:''}
-      ${b.memo?`<div class="note" style="margin-top:7px">메모: ${esc(b.memo)}</div>`:''}
-      <div class="row" style="margin-top:10px">
-        <button class="primary addDeduction" data-id="${b.id}">차감금액 입력</button>
-        <button class="danger delBatch" data-id="${b.id}">삭제</button>
-      </div>
-    </div>`;
-  }).join('') || '<div class="note" style="text-align:center;padding:20px">마감된 반품 기록이 없습니다.</div>';
+    const diffText=(st.diff>0?'+':'')+won(st.diff);
+    return `
+      <details class="record" style="padding:0;overflow:hidden">
+        <summary style="list-style:none;cursor:pointer;padding:13px 14px;display:grid;grid-template-columns:92px minmax(90px,1fr) auto auto;gap:8px;align-items:center">
+          <b>${esc(b.sentDate||'')}</b>
+          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(b.wholesaler||'도매상 미지정')}</span>
+          <span style="white-space:nowrap">반품 ${won(b.sentTotal)}</span>
+          <b style="white-space:nowrap">차감 ${won(st.deducted)}</b>
+        </summary>
 
-  $$('.addDeduction').forEach(btn=>btn.onclick=()=>addDeduction(btn.dataset.id));
-  $$('.delBatch').forEach(btn=>btn.onclick=()=>{if(confirm('삭제할까요?')){store(BATCH,load(BATCH,[]).filter(x=>x.id!==btn.dataset.id));renderRecords()}});
+        <div style="border-top:1px solid var(--line);padding:14px">
+          <div class="note" style="margin-bottom:8px">${done?'차감완료':'차감중'} · 품목 ${(b.items||[]).length}종 · 차이 ${diffText}</div>
+
+          <div style="display:flex;flex-direction:column;gap:6px">
+            ${(b.items||[]).map((i,idx)=>{
+              const hasPhoto=(i.photo)||(i.countShots&&i.countShots.length);
+              return `
+              <div style="display:grid;grid-template-columns:28px minmax(100px,1fr) auto auto auto ${hasPhoto?'auto':''};gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #edf1f0">
+                <span class="badge">${idx+1}</span>
+                <b style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(i.drug)}</b>
+                <span>${i.qty}T</span>
+                <span>${won(i.unitPrice)}/T</span>
+                <b>${won(i.total)}</b>
+                ${hasPhoto?`<button type="button" class="secondary photoViewBtn" data-batch="${b.id}" data-index="${idx}" style="padding:7px 9px">사진 보기</button>`:''}
+              </div>`;
+            }).join('')}
+          </div>
+
+          <div class="moneyPanel" style="margin-top:12px">
+            <div class="moneyBox"><small>총 반품금액</small><b>${won(b.sentTotal)}</b></div>
+            <div class="moneyBox"><small>반품 빠진금액</small><b>${won(st.deducted)}</b></div>
+            <div class="moneyBox diff"><small>차이</small><b>${diffText}</b></div>
+          </div>
+
+          ${(b.deductions||[]).length?`
+            <div class="deduction" style="margin-top:10px">
+              <b>차감 내역</b><br>
+              ${b.deductions.map((d,i)=>`${i+1}. ${d.date} · ${won(d.amount)}${d.note?' · '+esc(d.note):''}`).join('<br>')}
+            </div>`:''}
+
+          ${b.memo?`<div class="note" style="margin-top:8px">메모: ${esc(b.memo)}</div>`:''}
+
+          <div class="row" style="margin-top:10px">
+            <button class="primary addDeduction" data-id="${b.id}">차감금액 입력</button>
+            <button class="danger delBatch" data-id="${b.id}">삭제</button>
+          </div>
+        </div>
+      </details>`;
+  }).join('')||'<div class="note" style="text-align:center;padding:18px">마감된 반품 기록이 없습니다.</div>';
+
+  $$('.photoViewBtn').forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    openItemPhotos(btn.dataset.batch,btn.dataset.index);
+  });
+
+  $$('.addDeduction').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.id,arr=load(BATCH,[]),batch=arr.find(x=>x.id===id);if(!batch)return;
+    const amount=n(prompt('이번에 실제로 빠진 금액(원)을 입력하세요.','0'));
+    if(amount<=0)return;
+    const date=prompt('차감 날짜',today())||today();
+    const note=prompt('메모(선택)','')||'';
+    batch.deductions=batch.deductions||[];
+    batch.deductions.push({date,amount,note});
+    store(BATCH,arr);renderRecords();
+  });
+
+  $$('.delBatch').forEach(b=>b.onclick=()=>{
+    if(!confirm('이 반품 기록을 삭제할까요?'))return;
+    store(BATCH,load(BATCH,[]).filter(x=>x.id!==b.dataset.id));
+    renderRecords();
+  });
 }
 function addDeduction(id){
   const rows=load(BATCH,[]),b=rows.find(x=>x.id===id);if(!b)return;
@@ -995,6 +1121,7 @@ $('#newItem').onclick=()=>{
 $('#closeBatch').onclick=closeBatch;
 $('#resetDraft').onclick=()=>{if(confirm('작성 중인 품목을 모두 지울까요?')){draftItems=[];renderDraft();resetCurrentItem()}};
 $('#search').oninput=renderRecords;
+if($('#masterSearch'))$('#masterSearch').oninput=refreshMaster;
 $('#wholeAdd').onclick=()=>{const x=$('#wholeNew').value.trim();if(!x)return;const w=load(WHOLE,[]);if(!w.includes(x))w.push(x);store(WHOLE,w);$('#wholeNew').value='';refreshWholesalers()};
 
 
@@ -1328,5 +1455,16 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){try{saveDraft()}catch(e){}}
 });
 </script>
+
+<div id="photoModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;padding:18px;overflow:auto">
+  <div style="max-width:760px;margin:20px auto;background:#fff;border-radius:18px;padding:14px;position:relative">
+    <div class="row" style="margin-bottom:10px">
+      <h3 id="photoModalTitle" style="margin:0;flex:1">사진 보기</h3>
+      <button type="button" id="photoModalClose" class="secondary">닫기</button>
+    </div>
+    <div id="photoModalBody" style="display:flex;flex-direction:column;gap:14px"></div>
+  </div>
+</div>
+
 </body>
 </html>
