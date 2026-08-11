@@ -1,4 +1,4 @@
-const CACHE='pill-return-v23-displayfix';
+const CACHE='pill-return-v25-wholesaler';
 const SHARE_CACHE='pill-return-shares';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 

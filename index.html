@@ -81,8 +81,7 @@ details summary{cursor:pointer;font-weight:800}
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v23</span></div>
-  <p>필렌즈에서 계수 → 내보내기 → 약 개수 자동인식 → 약명 직접 입력 → 낱알반품 등록</p>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v25</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -91,11 +90,12 @@ details summary{cursor:pointer;font-weight:800}
 <section class="card" id="inputModeCard">
   <h2>반품 형태</h2>
   <div class="row">
-    <button class="primary" id="modeLoose">낱알</button>
-    <button class="secondary" id="modePTP">PTP / 포장상태</button>
+    <button type="button" class="primary" id="modeLoose">낱알</button>
+    <button type="button" class="secondary" id="modePTP">PTP</button>
   </div>
-  <div id="ptpHelp" class="note hidden" style="margin-top:8px">
-    PTP나 포장상태 약은 사진 없이 약명과 수량을 직접 입력하면 됩니다.
+  <div id="ptpHelp" class="hidden" style="margin-top:12px;padding:14px;border-radius:14px;background:#eef8f5">
+    <b>PTP 입력</b><br>
+    사진은 필요 없습니다. 아래에서 <b>약 이름 · 총 수량(T) · 1T당 금액</b>만 입력하세요.
   </div>
 </section>
 <section class="card" id="loosePhotoSection">
@@ -137,7 +137,7 @@ details summary{cursor:pointer;font-weight:800}
 
   <div class="grid2" style="margin-top:12px">
     <div>
-      <label>필렌즈에서 센 수량(T)</label>
+      <label><span id="qtyLabel">필렌즈에서 센 수량(T)</span></label>
       <div class="countBox">
         <input id="qty" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 15">
         <div class="row" style="justify-content:center;margin-top:8px">
@@ -162,7 +162,7 @@ details summary{cursor:pointer;font-weight:800}
     <div class="note" id="formula"></div>
   </div>
 
-  <button class="primary" id="addItem" style="width:100%;margin-top:10px">이 약 추가 완료</button>
+  <button class="primary" id="addItem" style="width:100%;margin-top:10px" id="addItemBtn">이 약 추가 완료</button>
 </section>
 
 <section class="card">
@@ -178,6 +178,22 @@ details summary{cursor:pointer;font-weight:800}
   </div>
 </section>
 
+
+<section class="card" id="wholesalerCard">
+  <div class="row" style="align-items:center">
+    <h2 style="margin:0;flex:1">도매상별 반품내역</h2>
+    <button type="button" class="secondary" id="toggleWhManage">도매상 관리</button>
+  </div>
+  <div id="wholesalerButtons" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
+  <div id="wholesalerHistory" class="hidden" style="margin-top:12px"></div>
+  <div id="wholesalerManager" class="hidden" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+    <div class="row">
+      <input id="newWholesaler" placeholder="새 도매상 이름" style="flex:1">
+      <button type="button" class="primary" id="addWholesaler">추가</button>
+    </div>
+    <div id="wholesalerManageList" style="margin-top:8px"></div>
+  </div>
+</section>
 <section class="card">
   <h2>3. 발송 정보 및 마감</h2>
   <div class="grid2">
@@ -234,6 +250,7 @@ details summary{cursor:pointer;font-weight:800}
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const BATCH='pill-return-batches-v10', MASTER='pill-return-master-v10', PRICEHIST='pill-return-price-history-v10';
 const WHOLE='pill-return-wholesalers-v10', RECENT='pill-return-recent-v10', BACKUPMETA='pill-return-backup-meta-v10';
+const DEFAULT_WHOLESALERS=['지오영','인천약품','백제약품','훼밀리팜','대웅더샵','한미온라인팜'];
 
 let draftItems=[], currentPhotoData='';
 
@@ -354,15 +371,78 @@ function refreshMaster(){
   });
   renderExistingResults();
 }
+
+function wholesalerBatches(name){
+  return load(BATCH,[]).filter(b=>(b.wholesaler||'')===name);
+}
+function showWholesalerHistory(name){
+  const area=$('#wholesalerHistory');
+  if(!area)return;
+  const rows=wholesalerBatches(name).sort((a,b)=>String(b.sentDate||'').localeCompare(String(a.sentDate||'')));
+  const totalSent=rows.reduce((s,b)=>s+(Number(b.total)||0),0);
+  const totalDeducted=rows.reduce((s,b)=>s+(Number(b.deductedTotal)||Number(b.deducted)||0),0);
+
+  area.classList.remove('hidden');
+  area.innerHTML=`
+    <div class="row" style="align-items:center">
+      <h3 style="margin:0;flex:1">${esc(name)} 반품내역</h3>
+      <button type="button" class="secondary" id="closeWhHistory">닫기</button>
+    </div>
+    ${rows.length?`
+      <div class="note" style="margin:8px 0">총 ${rows.length}건 · 보낸금액 ${won(totalSent)}${totalDeducted?` · 차감확인 ${won(totalDeducted)}`:''}</div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        ${rows.map(b=>`
+          <div style="border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff">
+            <div><b>${esc(b.sentDate||'날짜 없음')}</b> · ${b.items?.length||0}종 · <b>${won(b.total||0)}</b></div>
+            <div class="note" style="margin-top:5px">${(b.items||[]).map(i=>`${esc(i.drug)} ${i.qty}T`).join(' · ')||'품목 없음'}</div>
+            ${b.deductions&&b.deductions.length?`<div class="note" style="margin-top:5px">차감: ${b.deductions.map(d=>`${esc(d.date||'')} ${won(d.amount||0)}`).join(' / ')}</div>`:''}
+          </div>`).join('')}
+      </div>`:
+      '<div class="note" style="margin-top:10px">이 도매상으로 마감한 반품내역이 아직 없습니다.</div>'}`;
+  $('#closeWhHistory').onclick=()=>area.classList.add('hidden');
+}
+
+function getWholesalers(){
+  let arr=load(WHOLE,null);
+  if(!Array.isArray(arr)){
+    arr=[...DEFAULT_WHOLESALERS];
+    store(WHOLE,arr);
+  }
+  return arr;
+}
 function refreshWholesalers(){
-  if(!localStorage.getItem(WHOLE))store(WHOLE,['백제약품','지오영','복산나이스','온라인팜']);
-  const w=load(WHOLE,[]);
-  $('#wholesalers').innerHTML=w.map(x=>`<option value="${esc(x)}"></option>`).join('');
-  $('#wholeChips').innerHTML=w.map(x=>`<button class="chip" data-w="${esc(x)}">${esc(x)}</button>`).join('');
-  $$('#wholeChips .chip').forEach(b=>b.onclick=()=>{$('#wholesaler').value=b.dataset.w});
-  $('#wholeManage').innerHTML=w.map(x=>`<div class="row" style="border-top:1px solid #dbe4e1;padding:8px 0">
-    <span class="grow">${esc(x)}</span><button class="danger wholeDel" data-w="${encodeURIComponent(x)}">삭제</button></div>`).join('');
-  $$('.wholeDel').forEach(b=>b.onclick=()=>{store(WHOLE,load(WHOLE,[]).filter(x=>x!==decodeURIComponent(b.dataset.w)));refreshWholesalers()});
+  const arr=getWholesalers();
+
+  // 기존 도매상 select 갱신
+  const sel=$('#wholesaler');
+  if(sel){
+    const prev=sel.value;
+    sel.innerHTML='<option value="">도매상 선택</option>'+arr.map(x=>`<option>${esc(x)}</option>`).join('');
+    if(arr.includes(prev))sel.value=prev;
+  }
+
+  // 도매상 관리/조회 버튼
+  const box=$('#wholesalerButtons');
+  if(box){
+    box.innerHTML=arr.map(x=>`<button type="button" class="whBtn secondary" data-name="${esc(x)}">${esc(x)}</button>`).join('');
+    $$('.whBtn').forEach(b=>b.onclick=()=>showWholesalerHistory(b.dataset.name));
+  }
+
+  const manage=$('#wholesalerManageList');
+  if(manage){
+    manage.innerHTML=arr.map(x=>`
+      <div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
+        <b style="flex:1">${esc(x)}</b>
+        <button type="button" class="danger deleteWh" data-name="${esc(x)}">삭제</button>
+      </div>`).join('');
+    $$('.deleteWh').forEach(b=>b.onclick=()=>{
+      const name=b.dataset.name;
+      if(!confirm(`${name}을 도매상 목록에서 삭제할까요?\n기존 반품기록은 삭제되지 않습니다.`))return;
+      const next=getWholesalers().filter(x=>x!==name);
+      store(WHOLE,next);
+      refreshWholesalers();
+    });
+  }
 }
 
 function applyDrug(drug){
@@ -524,11 +604,11 @@ function resetCurrentItem(){
 }
 function addItem(){
   const drug=$('#drugName').value.trim(),qty=n($('#qty').value),price=n($('#unitPrice').value);
-  if(!currentPhotoData){alert('필렌즈 결과사진을 먼저 올려주세요.');return}
+  if(inputMode==='loose' && !currentPhotoData){alert('필렌즈 계수사진을 먼저 선택해 주세요.');return}
   if(!drug){alert('약 이름을 입력해 주세요.');return}
-  if(qty<=0){alert('필렌즈에서 센 수량(T)을 입력해 주세요.');return}
+  if(qty<=0){alert(inputMode==='loose'?'필렌즈에서 센 수량(T)을 입력해 주세요.':'PTP 수량(T)을 입력해 주세요.');return}
 
-  draftItems.push({id:uid(),drug,qty,unitPrice:price,total:qty*price,photo:currentPhotoData,countShots:JSON.parse(JSON.stringify(countShots)),inputMode});
+  draftItems.push({id:uid(),drug,qty,unitPrice:price,total:qty*price,photo:inputMode==='ptp'?'':currentPhotoData,countShots:inputMode==='ptp'?[]:JSON.parse(JSON.stringify(countShots)),inputMode});
   savePriceVersion(drug,price,$('#sentDate').value||today());
   rememberRecent(drug);refreshMaster();renderDraft();resetCurrentItem();
   window.scrollTo({top:0,behavior:'smooth'});
@@ -605,7 +685,7 @@ if($('#forceUpdateBtn')){
         s.textContent='새 버전 발견. 적용 중…';
         reg.waiting.postMessage({type:'SKIP_WAITING'});
       }else{
-        s.textContent='현재 최신 버전입니다. (v23)';
+        s.textContent='현재 최신 버전입니다. (v25)';
       }
     }catch(e){
       s.textContent='업데이트 확인 실패: '+(e.message||e);
@@ -632,11 +712,27 @@ renderCountShots();
 let inputMode='loose';
 function applyInputMode(){
   const loose=inputMode==='loose';
-  if($('#modeLoose')){$('#modeLoose').className=loose?'primary':'secondary'}
-  if($('#modePTP')){$('#modePTP').className=!loose?'primary':'secondary'}
-  if($('#loosePhotoSection'))$('#loosePhotoSection').classList.toggle('hidden',!loose);
-  if($('#shotHistoryCard'))$('#shotHistoryCard').classList.toggle('hidden',!loose);
-  if($('#ptpHelp'))$('#ptpHelp').classList.toggle('hidden',loose);
+
+  const looseBtn=$('#modeLoose'),ptpBtn=$('#modePTP');
+  if(looseBtn)looseBtn.className=loose?'primary':'secondary';
+  if(ptpBtn)ptpBtn.className=!loose?'primary':'secondary';
+
+  const photo=$('#loosePhotoSection'),shots=$('#shotHistoryCard'),help=$('#ptpHelp');
+  if(photo)photo.style.display=loose?'':'none';
+  if(shots)shots.style.display=loose?'':'none';
+  if(help)help.classList.toggle('hidden',loose);
+
+  if($('#qtyLabel'))$('#qtyLabel').textContent=loose?'필렌즈에서 센 수량(T)':'PTP 수량(T)';
+  if($('#addItemBtn'))$('#addItemBtn').textContent=loose?'이 약 추가 완료':'PTP 약 추가 완료';
+
+  if(!loose){
+    // PTP는 사진/계수정보가 필요 없으므로 깨끗하게 비움
+    currentPhotoData='';
+    countShots=[];
+    countParts=[];
+    if($('#pillEyePreview')){$('#pillEyePreview').src='';$('#pillEyePreview').style.display='none';}
+    if($('#shareStatus'))$('#shareStatus').textContent='';
+  }
 }
 if($('#modeLoose'))$('#modeLoose').onclick=()=>{inputMode='loose';applyInputMode()};
 if($('#modePTP'))$('#modePTP').onclick=()=>{
@@ -645,6 +741,26 @@ if($('#modePTP'))$('#modePTP').onclick=()=>{
   applyInputMode();
 };
 applyInputMode();
+
+
+if($('#toggleWhManage'))$('#toggleWhManage').onclick=()=>{
+  const m=$('#wholesalerManager');
+  m.classList.toggle('hidden');
+  refreshWholesalers();
+};
+if($('#addWholesaler'))$('#addWholesaler').onclick=()=>{
+  const inp=$('#newWholesaler');
+  const name=(inp.value||'').trim();
+  if(!name)return;
+  const arr=getWholesalers();
+  if(arr.includes(name)){alert('이미 등록된 도매상입니다.');return;}
+  arr.push(name);store(WHOLE,arr);inp.value='';refreshWholesalers();
+};
+
+
+if(!Array.isArray(load(WHOLE,null))){
+  store(WHOLE,[...DEFAULT_WHOLESALERS]);
+}
 
 $('#sentDate').value=today();refreshWholesalers();renderRecords();
 }
