@@ -1,5 +1,5 @@
 
-const CACHE='pill-return-v38-history4col';
+const CACHE='pill-return-v39-historyfix';
 const SHARE_CACHE='pill-return-shares';
 const ASSETS=['./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
@@ -18,8 +18,8 @@ async function injectPatch(req){
   const ct=r.headers.get('content-type')||'';
   if(!ct.includes('text/html'))return r;
   let text=await r.text();
-  // 표시 버전도 v38로 보이게 변경
-  text=text.replace(/(<span id="appVersion"[^>]*>)v\d+(<\/span>)/,'$1v38$2');
+  // 표시 버전도 v39로 보이게 변경
+  text=text.replace(/(<span id="appVersion"[^>]*>)v\d+(<\/span>)/,'$1v39$2');
   const h=new Headers(r.headers);h.set('content-type','text/html; charset=utf-8');h.delete('content-length');
   return new Response(text,{status:r.status,statusText:r.statusText,headers:h});
 }
