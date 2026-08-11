@@ -81,7 +81,7 @@ details summary{cursor:pointer;font-weight:800}
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v25</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v28</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -162,7 +162,7 @@ details summary{cursor:pointer;font-weight:800}
     <div class="note" id="formula"></div>
   </div>
 
-  <button class="primary" id="addItem" style="width:100%;margin-top:10px" id="addItemBtn">이 약 추가 완료</button>
+  <button class="primary" id="addItem" style="width:100%;margin-top:10px">이 약 추가 완료</button>
 </section>
 
 <section class="card">
@@ -413,12 +413,13 @@ function getWholesalers(){
 function refreshWholesalers(){
   const arr=getWholesalers();
 
-  // 기존 도매상 select 갱신
-  const sel=$('#wholesaler');
-  if(sel){
-    const prev=sel.value;
-    sel.innerHTML='<option value="">도매상 선택</option>'+arr.map(x=>`<option>${esc(x)}</option>`).join('');
-    if(arr.includes(prev))sel.value=prev;
+  // 도매상 입력창의 datalist 갱신
+  const dl=$('#wholesalers');
+  if(dl) dl.innerHTML=arr.map(x=>`<option value="${esc(x)}"></option>`).join('');
+  const chips=$('#wholeChips');
+  if(chips){
+    chips.innerHTML=arr.map(x=>`<button type="button" class="chip wholePick" data-name="${esc(x)}">${esc(x)}</button>`).join('');
+    $$('.wholePick').forEach(b=>b.onclick=()=>{$('#wholesaler').value=b.dataset.name;});
   }
 
   // 도매상 관리/조회 버튼
@@ -638,6 +639,7 @@ function renderDraft(){
   $$('.delDraft').forEach(b=>b.onclick=()=>{draftItems=draftItems.filter(x=>x.id!==b.dataset.id);renderDraft()});
   $$('.editDraft').forEach(b=>b.onclick=()=>{
     const x=draftItems.find(y=>y.id===b.dataset.id);if(!x)return;
+    inputMode=x.inputMode==='ptp'?'ptp':'loose';applyInputMode();
     currentPhotoData=x.photo||'';countShots=JSON.parse(JSON.stringify(x.countShots||[]));countParts=countShots.map(s=>Number(s.qty)||0);renderCountShots();$('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display=currentPhotoData?'block':'none';
     $('#drugName').value=x.drug;$('#qty').value=x.qty;$('#unitPrice').value=x.unitPrice;
     $('#priceHistoryNote').textContent=priceHistoryText(x.drug)?`약가 이력: ${priceHistoryText(x.drug)}`:'';
@@ -655,7 +657,10 @@ function closeBatch(){
   let w=load(WHOLE,[]);if(!w.includes(wholesaler)){w.push(wholesaler);store(WHOLE,w)}
   alert(`마감 완료\n${draftItems.length}종 / ${draftItems.reduce((s,x)=>s+x.qty,0)}T / ${won(total)}\n${sentDate} / ${wholesaler}`);
   draftItems=[];renderDraft();$('#batchMemo').value='';$('#wholesaler').value='';
-$('#clearSharedDebug').onclick=async()=>{
+  renderRecords();refreshWholesalers();
+}
+
+if($('#clearSharedDebug')) $('#clearSharedDebug').onclick=async()=>{
   try{
     const db=await openShareDB();
     await new Promise((resolve,reject)=>{
@@ -698,7 +703,7 @@ if($('#forceUpdateBtn')){
 if($('#addAnotherShot'))$('#addAnotherShot').onclick=()=>{
   appendShotMode=true;
   const inp=$('#pillEyePhoto');
-  if(inp)inp.click();
+  if(inp){ inp.value=''; inp.click(); }
 };
 
 if($('#clearShots'))$('#clearShots').onclick=()=>{
@@ -723,7 +728,7 @@ function applyInputMode(){
   if(help)help.classList.toggle('hidden',loose);
 
   if($('#qtyLabel'))$('#qtyLabel').textContent=loose?'필렌즈에서 센 수량(T)':'PTP 수량(T)';
-  if($('#addItemBtn'))$('#addItemBtn').textContent=loose?'이 약 추가 완료':'PTP 약 추가 완료';
+  if($('#addItem'))$('#addItem').textContent=loose?'이 약 추가 완료':'PTP 약 추가 완료';
 
   if(!loose){
     // PTP는 사진/계수정보가 필요 없으므로 깨끗하게 비움
@@ -734,11 +739,16 @@ function applyInputMode(){
     if($('#shareStatus'))$('#shareStatus').textContent='';
   }
 }
-if($('#modeLoose'))$('#modeLoose').onclick=()=>{inputMode='loose';applyInputMode()};
+if($('#modeLoose'))$('#modeLoose').onclick=()=>{
+  inputMode='loose';
+  applyInputMode();
+  renderDraft();
+};
 if($('#modePTP'))$('#modePTP').onclick=()=>{
   inputMode='ptp';
   countShots=[];countParts=[];currentPhotoData='';renderCountShots();
   applyInputMode();
+  renderDraft();
 };
 applyInputMode();
 
@@ -763,7 +773,6 @@ if(!Array.isArray(load(WHOLE,null))){
 }
 
 $('#sentDate').value=today();refreshWholesalers();renderRecords();
-}
 function batchStats(b){
   const deducted=(b.deductions||[]).reduce((s,d)=>s+n(d.amount),0);
   return {deducted,remain:n(b.sentTotal)-deducted};

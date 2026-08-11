@@ -1,7 +1,7 @@
 
-const CACHE='pill-return-v27-ptp3fields';
+const CACHE='pill-return-v28-corefix';
 const SHARE_CACHE='pill-return-shares';
-const ASSETS=['./manifest.webmanifest','./icon-192.png','./icon-512.png','./ptp-v27.js'];
+const ASSETS=['./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
@@ -18,9 +18,8 @@ async function injectPatch(req){
   const ct=r.headers.get('content-type')||'';
   if(!ct.includes('text/html'))return r;
   let text=await r.text();
-  // 표시 버전도 v27로 보이게 변경
-  text=text.replace(/(<span id="appVersion"[^>]*>)v\d+(<\/span>)/,'$1v27$2');
-  if(!text.includes('ptp-v27.js'))text=text.replace('</body>','<script src="./ptp-v27.js?v=27"></script></body>');
+  // 표시 버전도 v28로 보이게 변경
+  text=text.replace(/(<span id="appVersion"[^>]*>)v\d+(<\/span>)/,'$1v28$2');
   const h=new Headers(r.headers);h.set('content-type','text/html; charset=utf-8');h.delete('content-length');
   return new Response(text,{status:r.status,statusText:r.statusText,headers:h});
 }
