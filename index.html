@@ -81,9 +81,9 @@ details summary{cursor:pointer;font-weight:800}
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v18</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v19</span></div>
   <p>필렌즈에서 계수 → 내보내기 → 약 개수 자동인식 → 약명 직접 입력 → 낱알반품 등록</p>
-</header>
+</header><div id="shareHealth" style="display:none"></div>
 
 
 <div class="wrap">
@@ -602,7 +602,7 @@ if($('#forceUpdateBtn')){
         s.textContent='새 버전 발견. 적용 중…';
         reg.waiting.postMessage({type:'SKIP_WAITING'});
       }else{
-        s.textContent='현재 최신 버전입니다. (v18)';
+        s.textContent='현재 최신 버전입니다. (v19)';
       }
     }catch(e){
       s.textContent='업데이트 확인 실패: '+(e.message||e);
@@ -915,15 +915,20 @@ async function loadSharedImage(){
     if(!item)return;
     const blobs=item.blobs&&item.blobs.length?item.blobs:(item.blob?[item.blob]:[]);
     if(!blobs.length)return;
+    // 필렌즈에서 새로 공유한 경우:
+    // 기본은 새 약 1회 계수로 시작하고, 여러 파일이 한 번에 오면 그 안에서만 합산합니다.
+    inputMode='loose';applyInputMode();
+    const keepExisting = appendShotMode===true;
     for(let i=0;i<blobs.length;i++){
       const b=blobs[i];
       const file=new File([b],(item.names&&item.names[i])||item.name||`pillens-${i+1}.jpg`,{type:b.type||item.type||'image/jpeg'});
       currentPhotoData=await compressImage(file);
       $('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display='block';
-      $('#shareDebugImage').src=URL.createObjectURL(file);$('#shareDebugImage').style.display='block';
-      await recognizePillensCount(file,true);
+      if($('#shareDebugImage')){$('#shareDebugImage').src=URL.createObjectURL(file);$('#shareDebugImage').style.display='block';}
+      await recognizePillensCount(file, keepExisting || i>0);
     }
-    $('#shareStatus').innerHTML=`<b style="color:#087d63">필렌즈 공유파일 ${blobs.length}장 수신.</b> 숫자만 읽어 누적했습니다.`;
+    appendShotMode=false;
+    $('#shareStatus').innerHTML=`<b style="color:#087d63">필렌즈 사진 ${blobs.length}장 수신 완료.</b> 숫자를 읽어 입력했습니다.`;
     window.scrollTo({top:0,behavior:'smooth'});
   }catch(e){
     console.error(e);$('#shareDebugStatus').innerHTML='<b style="color:#ad3c3c">공유 수신 처리 실패</b><br>'+esc(String(e&&e.message||e));
