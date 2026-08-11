@@ -68,12 +68,20 @@ details summary{cursor:pointer;font-weight:800}
 .ocrOk{background:#eaf6f2;color:#08745a;padding:10px;border-radius:12px;font-weight:800}
 .ocrRun{background:#fff5d9;color:#7b6218;padding:10px;border-radius:12px}
 .ocrBad{background:#fff0f0;color:#a43d3d;padding:10px;border-radius:12px}
-.codebox{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f3f6f5;border-radius:10px;padding:10px;font-size:12px;word-break:break-all}</style>
+.codebox{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f3f6f5;border-radius:10px;padding:10px;font-size:12px;word-break:break-all}
+.shotList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:10px}
+.shotCard{border:1px solid var(--line);border-radius:13px;padding:8px;background:#fff}
+.shotCard img{width:100%;height:150px;object-fit:contain;background:#111;border-radius:9px}
+.shotMeta{display:flex;align-items:center;gap:7px;margin-top:7px}
+.shotMeta b{font-size:18px;flex:1}
+.shotMeta button{padding:7px 9px}
+@media(max-width:560px){.shotList{grid-template-columns:1fr 1fr}.shotCard img{height:120px}}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v16</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v17</span></div>
   <p>필렌즈에서 계수 → 내보내기 → 약 개수 자동인식 → 약명 직접 입력 → 낱알반품 등록</p>
 </header>
 
@@ -107,6 +115,18 @@ details summary{cursor:pointer;font-weight:800}
     <div id="shareStatus" class="note" style="margin-top:8px"></div>
     <div id="ocrStatus" class="note" style="margin-top:8px"></div>
   </div>
+</section>
+
+<section class="card" id="shotHistoryCard">
+  <div class="row">
+    <h2 style="margin:0;flex:1">이번 약 계수사진 / 합산내역</h2>
+    <button class="secondary" id="clearShots">사진·합산 초기화</button>
+  </div>
+  <div class="note" style="margin-top:7px">
+    필렌즈에서 여러 번 나눠 센 경우 각 사진과 개수를 모두 보관합니다. 예: 142 + 97 + 25 = 264T
+  </div>
+  <div id="shotFormula" class="totalBox" style="margin-top:10px"><b>아직 계수사진이 없습니다.</b></div>
+  <div id="shotList" class="shotList"></div>
 </section>
 
 <section class="card">
@@ -221,6 +241,58 @@ const BATCH='pill-return-batches-v10', MASTER='pill-return-master-v10', PRICEHIS
 const WHOLE='pill-return-wholesalers-v10', RECENT='pill-return-recent-v10', BACKUPMETA='pill-return-backup-meta-v10';
 
 let draftItems=[], currentPhotoData='';
+
+let countShots=[];
+
+function renderCountShots(){
+  const total=countShots.reduce((s,x)=>s+(Number(x.qty)||0),0);
+  if(countShots.length){
+    $('#shotFormula').innerHTML=`<div class="note">합산</div><b>${countShots.map(x=>Number(x.qty)||0).join(' + ')} = ${total}T</b>`;
+  }else{
+    $('#shotFormula').innerHTML='<b>아직 계수사진이 없습니다.</b>';
+  }
+  $('#shotList').innerHTML=countShots.map((x,i)=>`
+    <div class="shotCard">
+      <img src="${x.photo}" alt="${i+1}번째 계수사진">
+      <div class="shotMeta">
+        <span>${i+1}번째</span>
+        <b>${x.qty}T</b>
+        <button class="secondary shotEdit" data-i="${i}">수정</button>
+        <button class="danger shotDel" data-i="${i}">삭제</button>
+      </div>
+    </div>`).join('');
+  $$('.shotDel').forEach(b=>b.onclick=()=>{
+    countShots.splice(Number(b.dataset.i),1);countParts=countShots.map(x=>Number(x.qty)||0);syncShotTotal();renderCountShots();
+  });
+  $$('.shotEdit').forEach(b=>b.onclick=()=>{
+    const i=Number(b.dataset.i),v=prompt('이 사진의 수량(T)',countShots[i].qty);
+    if(v===null)return;
+    const q=Math.max(0,Math.round(Number(v)||0));
+    countShots[i].qty=q;countParts=countShots.map(x=>Number(x.qty)||0);syncShotTotal();renderCountShots();
+  });
+}
+function syncShotTotal(){
+  const total=countShots.reduce((s,x)=>s+(Number(x.qty)||0),0);
+  if($('#qty'))$('#qty').value=total||'';
+  if(typeof calcItem==='function')calcItem();
+}
+
+function captureRecognizedShot(photo){
+  const q=Math.max(0,Math.round(Number($('#qty')&&$('#qty').value)||0));
+  if(!q||!photo)return;
+  // OCR code may have put cumulative qty in the field. If there are previous shots,
+  // infer new shot only when q isn't already the cumulative total.
+  const prev=countShots.reduce((s,x)=>s+(Number(x.qty)||0),0);
+  const shotQty=(prev>0 && q>prev)?q-prev:q;
+  addCountShot(shotQty,photo);
+}
+
+function addCountShot(qty,photo){
+  qty=Math.max(0,Math.round(Number(qty)||0));
+  if(!qty||!photo)return;
+  countShots.push({qty,photo});
+  syncShotTotal();renderCountShots();
+}
 
 function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function today(){return new Date().toISOString().slice(0,10)}
@@ -434,6 +506,7 @@ function calcItem(){
   $('#formula').textContent=`${qty}T × ${won(price)} = ${won(total)}`;
 }
 function resetCurrentItem(){
+  countShots=[]; if($('#shotList'))renderCountShots();
   currentPhotoData='';
   $('#pillEyePhoto').value='';$('#pillEyePreview').src='';$('#pillEyePreview').style.display='none';$('#shareStatus').textContent='';$('#ocrStatus').textContent='';lastPillensFile=null;countParts=[];
   $('#drugName').value='';$('#qty').value='';$('#unitPrice').value='';$('#priceHistoryNote').textContent='';
@@ -445,7 +518,7 @@ function addItem(){
   if(!drug){alert('약 이름을 입력해 주세요.');return}
   if(qty<=0){alert('필렌즈에서 센 수량(T)을 입력해 주세요.');return}
 
-  draftItems.push({id:uid(),drug,qty,unitPrice:price,total:qty*price,photo:currentPhotoData});
+  draftItems.push({id:uid(),drug,qty,unitPrice:price,total:qty*price,photo:currentPhotoData,countShots:JSON.parse(JSON.stringify(countShots))});
   savePriceVersion(drug,price,$('#sentDate').value||today());
   rememberRecent(drug);refreshMaster();renderDraft();resetCurrentItem();
   window.scrollTo({top:0,behavior:'smooth'});
@@ -457,6 +530,8 @@ function renderDraft(){
       <div class="grow">
         <div class="itemHead"><span class="badge">${i+1}</span><h3>${esc(x.drug)}</h3></div>
         <div class="recordItems">${x.qty}T × ${won(x.unitPrice)} = <b>${won(x.total)}</b></div>
+        ${x.countShots&&x.countShots.length?`<div class="note" style="margin-top:5px">계수: ${x.countShots.map(s=>s.qty).join(' + ')} = ${x.qty}T</div>
+        <div style="display:flex;gap:5px;overflow-x:auto;margin-top:5px">${x.countShots.map(s=>`<img src="${s.photo}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;background:#111">`).join('')}</div>`:''}
       </div>
       <button class="secondary editDraft" data-id="${x.id}">수정</button>
       <button class="danger delDraft" data-id="${x.id}">삭제</button>
@@ -470,7 +545,7 @@ function renderDraft(){
   $$('.delDraft').forEach(b=>b.onclick=()=>{draftItems=draftItems.filter(x=>x.id!==b.dataset.id);renderDraft()});
   $$('.editDraft').forEach(b=>b.onclick=()=>{
     const x=draftItems.find(y=>y.id===b.dataset.id);if(!x)return;
-    currentPhotoData=x.photo||'';$('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display=currentPhotoData?'block':'none';
+    currentPhotoData=x.photo||'';countShots=JSON.parse(JSON.stringify(x.countShots||[]));countParts=countShots.map(s=>Number(s.qty)||0);renderCountShots();$('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display=currentPhotoData?'block':'none';
     $('#drugName').value=x.drug;$('#qty').value=x.qty;$('#unitPrice').value=x.unitPrice;
     $('#priceHistoryNote').textContent=priceHistoryText(x.drug)?`약가 이력: ${priceHistoryText(x.drug)}`:'';
     draftItems=draftItems.filter(y=>y.id!==x.id);renderDraft();calcItem();window.scrollTo({top:0,behavior:'smooth'});
@@ -517,13 +592,21 @@ if($('#forceUpdateBtn')){
         s.textContent='새 버전 발견. 적용 중…';
         reg.waiting.postMessage({type:'SKIP_WAITING'});
       }else{
-        s.textContent='현재 최신 버전입니다. (v16)';
+        s.textContent='현재 최신 버전입니다. (v17)';
       }
     }catch(e){
       s.textContent='업데이트 확인 실패: '+(e.message||e);
     }
   };
 }
+
+
+if($('#clearShots'))$('#clearShots').onclick=()=>{
+  if(!countShots.length || confirm('현재 약의 계수사진과 합산내역을 모두 지울까요?')){
+    countShots=[];countParts=[];syncShotTotal();renderCountShots();
+  }
+};
+renderCountShots();
 
 $('#sentDate').value=today();refreshWholesalers();renderRecords();
 }
@@ -539,7 +622,7 @@ function renderRecords(){
     const st=batchStats(b),done=Math.abs(st.remain)<.01;
     return `<div class="record">
       <div class="recordTop"><span class="badge ${done?'done':'wait'}">${done?'차감완료':'차감중'}</span><h3>${esc(b.wholesaler)} · ${b.sentDate}</h3></div>
-      <div class="recordItems">${(b.items||[]).map(i=>`${esc(i.drug)} · ${i.qty}T · ${won(i.total)}`).join('<br>')}</div>
+      <div class="recordItems">${(b.items||[]).map(i=>`${esc(i.drug)} · ${i.qty}T · ${won(i.total)}${i.countShots&&i.countShots.length?`<br><span class="note">계수: ${i.countShots.map(s=>s.qty).join(' + ')} = ${i.qty}T</span><br><span style="display:flex;gap:4px;overflow-x:auto;margin:4px 0 8px">${i.countShots.map(s=>`<img src="${s.photo}" style="width:64px;height:64px;object-fit:cover;border-radius:7px;background:#111">`).join('')}</span>`:''}`).join('<br>')}</div>
       <div class="moneyPanel">
         <div class="moneyBox"><small>보낸금액</small><b>${won(b.sentTotal)}</b></div>
         <div class="moneyBox"><small>빠진금액</small><b>${won(st.deducted)}</b></div>
@@ -757,8 +840,17 @@ async function recognizePillensCount(blob,add=true){
     $('#shareDebugMeta').textContent=`숫자 OCR 원문: ${best.raw.trim()||'(없음)'}`;
     return best;
   }
-  if(add) countParts.push(best.qty); else countParts=[best.qty];
+  const fullPhoto=await compressImage(blob,720,.72);
+  if(add){
+    countParts.push(best.qty);
+    countShots.push({qty:best.qty,photo:fullPhoto});
+  }else{
+    countParts=[best.qty];
+    countShots=[{qty:best.qty,photo:fullPhoto}];
+  }
   const total=countParts.reduce((a,b)=>a+b,0);
+  currentPhotoData=fullPhoto;
+  renderCountShots();
   $('#qty').value=total;
   calcItem();
   $('#shareDebugStatus').innerHTML=`<b style="color:#087d63">숫자 인식 성공: ${best.qty}T</b>${countParts.length>1?` · 누적 <b>${total}T</b>`:''}`;
