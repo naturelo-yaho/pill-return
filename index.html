@@ -81,7 +81,7 @@ details summary{cursor:pointer;font-weight:800}
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v29</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v31</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -105,7 +105,7 @@ details summary{cursor:pointer;font-weight:800}
     <div>
       <label>약 이름</label>
       <input id="ptpDrugName" list="drugMaster" autocomplete="off" placeholder="예: 씨잘정 5mg">
-      <div id="ptpExistingResults" class="quickList"></div>
+      <div id="ptpExistingResults" class="hidden"></div>
     </div>
     <div>
       <label>수량(T)</label>
@@ -157,10 +157,8 @@ details summary{cursor:pointer;font-weight:800}
   <label>약 이름</label>
   <input id="drugName" list="drugMaster" autocomplete="off" placeholder="처음 약이면 직접 입력, 기존 약이면 일부만 검색">
   <datalist id="drugMaster"></datalist>
-  <div class="note" style="margin-top:6px">
-    한 번 저장한 약은 다음부터 <b>부루</b>처럼 일부만 입력하면 아래에서 바로 선택할 수 있습니다.
-  </div>
-  <div id="existingResults" class="quickList"></div>
+  <div class="note" style="margin-top:6px">약 이름을 직접 입력하세요. 기존 약은 입력한 이름이 정확히 일치하면 최근 가격을 자동으로 불러옵니다.</div>
+  <div id="existingResults" class="hidden"></div>
 
   <div class="grid2" style="margin-top:12px">
     <div>
@@ -247,7 +245,7 @@ details summary{cursor:pointer;font-weight:800}
     <input id="importFile" class="hidden" type="file" accept=".json,application/json">
   </div>
   <div class="note" id="backupInfo" style="margin:8px 0 10px">
-    백업파일에는 반품기록, 차감내역, 약명·약가 이력, 도매상, 최근 사용약이 모두 포함됩니다.
+    백업파일에는 반품기록, 작성 중인 반품목록, 차감내역, 약명·약가 이력, 도매상, 최근 사용약이 모두 포함됩니다.
   </div>
   <div class="row" style="margin-bottom:8px">
     <div class="grow note">마지막 백업: <b id="lastBackupText">없음</b></div>
@@ -276,10 +274,10 @@ details summary{cursor:pointer;font-weight:800}
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const BATCH='pill-return-batches-v10', MASTER='pill-return-master-v10', PRICEHIST='pill-return-price-history-v10';
-const WHOLE='pill-return-wholesalers-v10', RECENT='pill-return-recent-v10', BACKUPMETA='pill-return-backup-meta-v10';
+const WHOLE='pill-return-wholesalers-v10', RECENT='pill-return-recent-v10', BACKUPMETA='pill-return-backup-meta-v10', DRAFT='pill-return-draft-v30';
 const DEFAULT_WHOLESALERS=['지오영','인천약품','백제약품','훼밀리팜','대웅더샵','한미온라인팜'];
 
-let draftItems=[], currentPhotoData='';
+let draftItems=load('pill-return-draft-v30',[]), currentPhotoData='';
 
 let countShots=[];
 let appendShotMode=false;
@@ -353,6 +351,7 @@ function won(v){return (Number(v)||0).toLocaleString('ko-KR',{maximumFractionDig
 function n(v){return Number(v)||0}
 function load(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
 function store(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function saveDraft(){store(DRAFT,draftItems)}
 function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
 function getPriceHistory(){return load(PRICEHIST,{})}
@@ -421,7 +420,7 @@ function showWholesalerHistory(name){
         ${rows.map(b=>`
           <div style="border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff">
             <div><b>${esc(b.sentDate||'날짜 없음')}</b> · ${b.items?.length||0}종 · <b>${won(b.total||0)}</b></div>
-            <div class="note" style="margin-top:5px">${(b.items||[]).map(i=>`${esc(i.drug)} ${i.qty}T`).join(' · ')||'품목 없음'}</div>
+            <div class="note" style="margin-top:5px">${(b.items||[]).map(i=>`${esc(i.drug)} ${i.qty}T · ${won(i.total)}`).join(' / ')||'품목 없음'}</div>
             ${b.deductions&&b.deductions.length?`<div class="note" style="margin-top:5px">차감: ${b.deductions.map(d=>`${esc(d.date||'')} ${won(d.amount||0)}`).join(' / ')}</div>`:''}
           </div>`).join('')}
       </div>`:
@@ -482,13 +481,7 @@ function applyDrug(drug){
   calcItem();
 }
 function renderExistingResults(){
-  const q=$('#drugName').value.trim().toLowerCase();
-  const all=Object.keys(load(MASTER,{})), recent=load(RECENT,[]);
-  let list=q?all.filter(x=>x.toLowerCase().includes(q)).slice(0,12):recent.filter(x=>all.includes(x)).slice(0,8);
-  $('#existingResults').innerHTML=list.map(x=>`<button type="button" class="quick existingPick" data-drug="${encodeURIComponent(x)}">
-    <strong>${esc(x)}</strong> · ${won(getCurrentPrice(x))}/T
-  </button>`).join('');
-  $$('.existingPick').forEach(b=>b.onclick=()=>applyDrug(decodeURIComponent(b.dataset.drug)));
+  if($('#existingResults')) $('#existingResults').innerHTML='';
 }
 
 
@@ -671,22 +664,48 @@ function addItem(){
   },50);
 }
 function renderDraft(){
-  $('#draftItems').innerHTML=draftItems.map((x,i)=>`<div class="itemRow">
-    <div class="row">
-      ${(!x.countShots||!x.countShots.length)&&x.photo?`<img class="thumb" src="${x.photo}">`:''}
-      <div class="grow">
-        <div class="itemHead"><span class="badge">${i+1}</span><h3>${esc(x.drug)}${x.inputMode==="ptp"?` <span class="pill">PTP</span>`:""}</h3></div>
-        <div class="recordItems">${x.qty}T × ${won(x.unitPrice)} = <b>${won(x.total)}</b></div>
-        ${x.countShots&&x.countShots.length?`
-        <div class="note" style="margin-top:6px">계수: ${x.countShots.length>1?x.countShots.map(s=>s.qty).join(' + ')+' = ':''}${x.qty}T</div>
-        <div style="display:flex;gap:8px;overflow-x:auto;margin-top:7px">
-          ${x.countShots.map((s,i)=>`<div style="min-width:86px;text-align:center"><img src="${s.photo}" style="width:86px;height:86px;object-fit:contain;border-radius:10px;background:#111;display:block"><div style="font-size:13px;font-weight:700;margin-top:4px">${x.countShots.length>1?`${i+1}차 · `:''}${s.qty}T</div></div>`).join('')}
-        </div>`:''}
+  saveDraft();
+
+  const rows = draftItems.map((x,i)=>`
+    <div class="itemRow" style="padding:14px">
+      <div class="row" style="align-items:flex-start;gap:12px">
+        ${(!x.countShots||!x.countShots.length)&&x.photo?`<img class="thumb" src="${x.photo}">`:''}
+        <div class="grow" style="min-width:0">
+          <div class="itemHead">
+            <span class="badge">${i+1}</span>
+            <h3 style="font-size:16px">${esc(x.drug)}</h3>
+            ${x.inputMode==="ptp"?`<span class="badge">PTP</span>`:`<span class="badge">낱알</span>`}
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px">
+            <div class="sum"><small>수량</small><b>${x.qty}T</b></div>
+            <div class="sum"><small>1T 금액</small><b>${won(x.unitPrice)}</b></div>
+            <div class="sum"><small>품목 금액</small><b>${won(x.total)}</b></div>
+          </div>
+
+          ${x.countShots&&x.countShots.length?`
+            <div class="note" style="margin-top:8px">
+              ${x.countShots.length>1
+                ? `계수 합산: ${x.countShots.map(s=>s.qty).join(' + ')} = ${x.qty}T`
+                : `계수사진 1장 · ${x.qty}T`}
+            </div>
+            <div style="display:flex;gap:8px;overflow-x:auto;margin-top:7px">
+              ${x.countShots.map((s,n)=>`
+                <div style="min-width:76px;text-align:center">
+                  <img src="${s.photo}" style="width:76px;height:76px;object-fit:contain;border-radius:10px;background:#111;display:block">
+                  ${x.countShots.length>1?`<div style="font-size:12px;font-weight:700;margin-top:4px">${n+1}차 · ${s.qty}T</div>`:''}
+                </div>`).join('')}
+            </div>`:''}
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <button class="secondary editDraft" data-id="${x.id}">수정</button>
+          <button class="danger delDraft" data-id="${x.id}">삭제</button>
+        </div>
       </div>
-      <button class="secondary editDraft" data-id="${x.id}">수정</button>
-      <button class="danger delDraft" data-id="${x.id}">삭제</button>
-    </div>
-  </div>`).join('') || '<div class="note" style="text-align:center;padding:18px">아직 추가한 약이 없습니다.</div>';
+    </div>`).join('');
+
+  $('#draftItems').innerHTML = rows || '<div class="note" style="text-align:center;padding:18px">아직 추가한 약이 없습니다.</div>';
 
   $('#draftKinds').textContent=draftItems.length+'종';
   $('#draftQty').textContent=draftItems.reduce((s,x)=>s+x.qty,0)+'T';
@@ -701,7 +720,8 @@ function renderDraft(){
       $('#ptpPriceHistoryNote').textContent=priceHistoryText(x.drug)?`약가 이력: ${priceHistoryText(x.drug)}`:'';
       calcPtpItem();
     }else{
-      currentPhotoData=x.photo||'';countShots=JSON.parse(JSON.stringify(x.countShots||[]));countParts=countShots.map(s=>Number(s.qty)||0);renderCountShots();$('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display=currentPhotoData?'block':'none';
+      currentPhotoData=x.photo||'';countShots=JSON.parse(JSON.stringify(x.countShots||[]));countParts=countShots.map(s=>Number(s.qty)||0);renderCountShots();
+      $('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display=currentPhotoData?'block':'none';
       $('#drugName').value=x.drug;$('#qty').value=x.qty;$('#unitPrice').value=x.unitPrice;
       $('#priceHistoryNote').textContent=priceHistoryText(x.drug)?`약가 이력: ${priceHistoryText(x.drug)}`:'';
       calcItem();
@@ -720,7 +740,7 @@ function closeBatch(){
 
   let w=load(WHOLE,[]);if(!w.includes(wholesaler)){w.push(wholesaler);store(WHOLE,w)}
   alert(`마감 완료\n${draftItems.length}종 / ${draftItems.reduce((s,x)=>s+x.qty,0)}T / ${won(total)}\n${sentDate} / ${wholesaler}`);
-  draftItems=[];renderDraft();$('#batchMemo').value='';$('#wholesaler').value='';
+  draftItems=[];saveDraft();renderDraft();$('#batchMemo').value='';$('#wholesaler').value='';
   renderRecords();refreshWholesalers();
 }
 
@@ -754,7 +774,7 @@ if($('#forceUpdateBtn')){
         s.textContent='새 버전 발견. 적용 중…';
         reg.waiting.postMessage({type:'SKIP_WAITING'});
       }else{
-        s.textContent='현재 최신 버전입니다. (v29)';
+        s.textContent='현재 최신 버전입니다. (v31)';
       }
     }catch(e){
       s.textContent='업데이트 확인 실패: '+(e.message||e);
@@ -781,19 +801,7 @@ renderCountShots();
 let inputMode='loose';
 
 function renderPtpExistingResults(){
-  if(!$('#ptpExistingResults')||!$('#ptpDrugName'))return;
-  const q=$('#ptpDrugName').value.trim().toLowerCase();
-  const all=Object.keys(load(MASTER,{})), recent=load(RECENT,[]);
-  const list=q?all.filter(x=>x.toLowerCase().includes(q)).slice(0,12):recent.filter(x=>all.includes(x)).slice(0,8);
-  $('#ptpExistingResults').innerHTML=list.map(x=>`<button type="button" class="quick ptpExistingPick" data-drug="${encodeURIComponent(x)}"><strong>${esc(x)}</strong> · ${won(getCurrentPrice(x))}/T</button>`).join('');
-  $$('.ptpExistingPick').forEach(b=>b.onclick=()=>{
-    const drug=decodeURIComponent(b.dataset.drug);
-    $('#ptpDrugName').value=drug;
-    const p=getCurrentPrice(drug);
-    $('#ptpUnitPrice').value=p==null?'':p;
-    $('#ptpPriceHistoryNote').textContent=priceHistoryText(drug)?`약가 이력: ${priceHistoryText(drug)}`:'';
-    calcPtpItem();
-  });
+  if($('#ptpExistingResults')) $('#ptpExistingResults').innerHTML='';
 }
 
 function calcPtpItem(){
@@ -875,22 +883,44 @@ if(!Array.isArray(load(WHOLE,null))){
 $('#sentDate').value=today();refreshWholesalers();renderRecords();
 function batchStats(b){
   const deducted=(b.deductions||[]).reduce((s,d)=>s+n(d.amount),0);
-  return {deducted,remain:n(b.sentTotal)-deducted};
+  const sent=n(b.sentTotal);
+  const diff=deducted-sent; // 더 많이 차감되면 +, 덜 차감되면 -
+  return {
+    deducted,
+    diff,
+    remain:Math.max(sent-deducted,0),
+    extra:Math.max(deducted-sent,0)
+  };
 }
 function renderRecords(){
   const q=$('#search').value.trim().toLowerCase();
   const rows=load(BATCH,[]).filter(b=>!q||(b.wholesaler||'').toLowerCase().includes(q)||(b.sentDate||'').includes(q)||(b.items||[]).some(i=>(i.drug||'').toLowerCase().includes(q)));
 
   $('#records').innerHTML=rows.map(b=>{
-    const st=batchStats(b),done=Math.abs(st.remain)<.01;
+    const st=batchStats(b),done=st.remain<.01;
     return `<div class="record">
       <div class="recordTop"><span class="badge ${done?'done':'wait'}">${done?'차감완료':'차감중'}</span><h3>${esc(b.wholesaler)} · ${b.sentDate}</h3></div>
-      <div class="recordItems">${(b.items||[]).map(i=>`${esc(i.drug)} · ${i.qty}T · ${won(i.total)}${i.countShots&&i.countShots.length?`<br><span class="note">계수: ${i.countShots.length>1?i.countShots.map(s=>s.qty).join(' + ')+' = ':''}${i.qty}T</span><br><span style="display:flex;gap:7px;overflow-x:auto;margin:6px 0 8px">${i.countShots.map((s,n)=>`<span style="display:inline-block;text-align:center;min-width:72px"><img src="${s.photo}" style="width:72px;height:72px;object-fit:contain;border-radius:8px;background:#111;display:block"><small>${i.countShots.length>1?`${n+1}차 · `:''}${s.qty}T</small></span>`).join('')}</span>`:''}`).join('<br>')}</div>
+      <div class="recordItems" style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+        ${(b.items||[]).map((i,idx)=>`
+          <div style="border:1px solid var(--line);border-radius:12px;padding:10px;background:#fafcfc">
+            <div class="row">
+              <span class="badge">${idx+1}</span>
+              <b style="flex:1">${esc(i.drug)}</b>
+              <span class="badge">${i.inputMode==='ptp'?'PTP':'낱알'}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px">
+              <div class="sum"><small>수량</small><b>${i.qty}T</b></div>
+              <div class="sum"><small>1T 금액</small><b>${won(i.unitPrice)}</b></div>
+              <div class="sum"><small>금액</small><b>${won(i.total)}</b></div>
+            </div>
+            ${i.countShots&&i.countShots.length>1?`<div class="note" style="margin-top:6px">계수 합산: ${i.countShots.map(s=>s.qty).join(' + ')} = ${i.qty}T</div>`:''}
+          </div>`).join('')}
+      </div>
       <div class="moneyPanel">
         <div class="moneyBox"><small>보낸금액</small><b>${won(b.sentTotal)}</b></div>
-        <div class="moneyBox"><small>빠진금액</small><b>${won(st.deducted)}</b></div>
-        <div class="moneyBox remain"><small>덜 빠진 금액</small><b>${won(st.remain)}</b></div>
-        <div class="moneyBox diff"><small>차이</small><b>${won(st.remain)}</b></div>
+        <div class="moneyBox"><small>실제 차감</small><b>${won(st.deducted)}</b></div>
+        <div class="moneyBox remain"><small>아직 덜 빠진 금액</small><b>${won(st.remain)}</b></div>
+        <div class="moneyBox diff"><small>차이</small><b>${st.diff>0?'+':''}${won(st.diff)}</b></div>
       </div>
       ${(b.deductions||[]).length?`<div class="deduction"><b>차감 내역</b><br>${b.deductions.map((d,i)=>`${i+1}. ${d.date} · ${won(d.amount)}${d.note?' · '+esc(d.note):''}`).join('<br>')}</div>`:''}
       ${b.memo?`<div class="note" style="margin-top:7px">메모: ${esc(b.memo)}</div>`:''}
@@ -981,7 +1011,8 @@ function makeBackupPayload(){
     master:load(MASTER,{}),
     priceHistory:load(PRICEHIST,{}),
     wholesalers:load(WHOLE,[]),
-    recent:load(RECENT,[])
+    recent:load(RECENT,[]),
+    draft:load(DRAFT,[])
   };
 }
 function downloadBackup(){
@@ -1011,6 +1042,7 @@ $('#importFile').onchange=async e=>{
     store(PRICEHIST,d.priceHistory||{});
     store(WHOLE,d.wholesalers||[]);
     store(RECENT,d.recent||[]);
+    draftItems=Array.isArray(d.draft)?d.draft:[];saveDraft();
     refreshMaster();refreshWholesalers();renderRecords();resetCurrentItem();
     alert('백업 복원이 완료되었습니다.');
   }catch(err){
@@ -1290,6 +1322,11 @@ if('serviceWorker' in navigator){
 $('#sentDate').value=today();
 refreshMaster();refreshWholesalers();renderDraft();renderRecords();resetCurrentItem(true);calcItem();refreshBackupMeta();
 
+
+window.addEventListener('pagehide',()=>{try{saveDraft()}catch(e){}});
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'){try{saveDraft()}catch(e){}}
+});
 </script>
 </body>
 </html>
