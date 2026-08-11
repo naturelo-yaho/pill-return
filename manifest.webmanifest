@@ -1,7 +1,7 @@
 {
   "name": "낱알반품 관리",
   "short_name": "낱알반품",
-  "description": "PillEye 결과사진을 바로 받아 낱알반품을 관리하는 앱",
+  "description": "필렌즈 결과사진을 바로 받아 낱알반품을 관리하는 앱",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
