@@ -2,7 +2,7 @@
   "name": "낱알반품 관리",
   "short_name": "낱알반품",
   "description": "필렌즈 결과화면의 약 개수 숫자만 자동인식하고 여러 장을 합산하는 낱알반품 관리 앱",
-  "start_url":"./?app=v20",
+  "start_url": "./?app=v22",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f3f6f5",
@@ -24,13 +24,12 @@
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url",
       "files": [
         {
           "name": "image",
-          "accept":["image/*","image/jpeg","image/png","image/webp"]
+          "accept": [
+            "image/*"
+          ]
         }
       ]
     }
