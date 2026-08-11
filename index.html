@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#087d63">
 <link rel="manifest" href="./manifest.webmanifest">
-<title>낱알반품 관리 - 필렌즈 전용</title>
+<title>낱알반품 관리 - 필렌즈 숫자전용</title>
 <style>
 :root{
   --bg:#f3f6f5;--card:#fff;--ink:#1d2825;--muted:#6d7975;--brand:#087d63;--brand2:#075d4b;
@@ -74,46 +74,35 @@ details summary{cursor:pointer;font-weight:800}
 <body>
 <header>
   <h1>낱알반품 관리</h1>
-  <p>필렌즈에서 계수·메모 입력 → 내보내기 → 약 개수 + 메모 자동인식 → 낱알반품 등록</p>
+  <p>필렌즈에서 계수 → 내보내기 → 약 개수 자동인식 → 약명 직접 입력 → 낱알반품 등록</p>
 </header>
 
 
 <div class="wrap">
 <section class="card" id="shareDebugCard">
-  <h2>공유 수신 테스트</h2>
+  <h2>필렌즈 숫자 인식</h2>
   <div class="note" style="margin-bottom:8px">
-    필렌즈에서 <b>약 개수</b>와 <b>메모에 적은 약명</b>을 따로 읽습니다. 예: <b>142</b> + <b>부루펜정200mg</b>
+    약 이름은 읽지 않습니다. 필렌즈 화면의 <b>가운데 큰 약 개수 숫자만</b> 읽습니다. 여러 장이면 각 사진의 숫자를 자동으로 더합니다.
   </div>
-  <div id="shareDebugStatus" class="note" style="font-size:14px">
-    아직 필렌즈에서 공유받은 파일이 없습니다.
-  </div>
+  <div id="shareDebugStatus" class="note" style="font-size:14px">아직 필렌즈에서 공유받은 파일이 없습니다.</div>
   <div id="shareDebugMeta" class="codebox hidden" style="margin-top:10px"></div>
   <div id="cropDebug" class="hidden" style="margin-top:10px">
-    <div class="note"><b>인식에 사용한 영역</b></div>
-    <div class="grid2" style="margin-top:6px">
-      <div><div class="note">수량 영역</div><img id="countCropPreview" class="preview" style="display:block;max-height:130px"></div>
-      <div><div class="note">약명/메모 영역</div><img id="drugCropPreview" class="preview" style="display:block;max-height:130px"></div>
-    </div>
+    <div class="note"><b>숫자 인식에 사용한 영역</b></div>
+    <img id="countCropPreview" class="preview" style="display:block;max-height:180px">
   </div>
   <img id="shareDebugImage" class="preview" style="margin-top:10px">
-  <div class="row" style="margin-top:10px">
-    <button class="secondary" id="clearSharedDebug">공유 테스트 초기화</button>
-  </div>
+  <div class="row" style="margin-top:10px"><button class="secondary" id="clearSharedDebug">누적 수량 초기화</button></div>
 </section>
-
 
 <section class="card">
   <h2>1. 필렌즈 결과사진 올리기</h2>
   <div class="upload">
-    <input id="pillEyePhoto" type="file" accept="image/*">
-    <button class="primary" id="pillEyeBtn">📷 필렌즈 결과사진 선택</button>
-    <div class="note" style="margin-top:8px">
-      필렌즈에서 약 개수를 센 뒤 메모에 약명을 입력하고 「내보내기」 → 「낱알반품 관리」를 선택하세요. 전달된 화면에서 약 개수와 메모를 각각 읽어 자동입력합니다.
-    </div>
+    <input id="pillEyePhoto" type="file" accept="image/*" multiple>
+    <button class="primary" id="pillEyeBtn">📷 필렌즈 결과사진 선택 (여러 장 가능)</button>
+    <div class="note" style="margin-top:8px">필렌즈에서 내보낸 화면을 그대로 보내세요. 약이 많아 2~3번 나눠 센 경우 사진을 차례로 공유하거나 여러 장을 한 번에 선택하면 <b>수량을 합산</b>합니다.</div>
     <img id="pillEyePreview" class="preview">
     <div id="shareStatus" class="note" style="margin-top:8px"></div>
     <div id="ocrStatus" class="note" style="margin-top:8px"></div>
-    <button class="secondary hidden" id="retryOcr" style="margin-top:8px">약명·T수 다시 읽기</button>
   </div>
 </section>
 
@@ -443,7 +432,7 @@ function calcItem(){
 }
 function resetCurrentItem(){
   currentPhotoData='';
-  $('#pillEyePhoto').value='';$('#pillEyePreview').src='';$('#pillEyePreview').style.display='none';$('#shareStatus').textContent='';$('#ocrStatus').textContent='';$('#retryOcr').classList.add('hidden');lastPillensFile=null;
+  $('#pillEyePhoto').value='';$('#pillEyePreview').src='';$('#pillEyePreview').style.display='none';$('#shareStatus').textContent='';$('#ocrStatus').textContent='';lastPillensFile=null;countParts=[];
   $('#drugName').value='';$('#qty').value='';$('#unitPrice').value='';$('#priceHistoryNote').textContent='';
   calcItem();renderExistingResults();
 }
@@ -504,11 +493,11 @@ $('#clearSharedDebug').onclick=async()=>{
       tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
     });
   }catch(e){}
-  $('#shareDebugStatus').textContent='공유 테스트를 초기화했습니다. 필렌즈에서 다시 내보내기 해보세요.';
+  $('#shareDebugStatus').textContent='누적 수량을 초기화했습니다. 필렌즈에서 다음 사진을 보내세요.';
   $('#shareDebugMeta').classList.add('hidden');
   $('#shareDebugMeta').textContent='';
   $('#shareDebugImage').src='';
-  $('#shareDebugImage').style.display='none';$('#cropDebug').classList.add('hidden');$('#countCropPreview').src='';$('#drugCropPreview').src='';
+  $('#shareDebugImage').style.display='none';$('#cropDebug').classList.add('hidden');$('#countCropPreview').src='';countParts=[];$('#qty').value='';calcItem();
 };
 
 $('#sentDate').value=today();refreshWholesalers();renderRecords();
@@ -555,15 +544,10 @@ function addDeduction(id){
 
 $('#pillEyeBtn').onclick=()=>$('#pillEyePhoto').click();
 $('#pillEyePhoto').onchange=async e=>{
-  const f=e.target.files[0];if(!f)return;
-  lastPillensFile=f;
-  currentPhotoData=await compressImage(f);
-  $('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display='block';
-  $('#shareDebugStatus').textContent='선택한 필렌즈 이미지에서 약명/T수를 읽는 중…';
-  $('#shareDebugImage').src=URL.createObjectURL(f);$('#shareDebugImage').style.display='block';
-  await recognizeActualPillens(f);
+  const files=[...e.target.files];if(!files.length)return;
+  for(const f of files) await recognizePillensCount(f,true);
+  e.target.value='';
 };
-$('#retryOcr').onclick=()=>{if(lastPillensFile)recognizePillens(lastPillensFile)};
 $('#drugName').addEventListener('input',renderExistingResults);
 $('#drugName').addEventListener('change',()=>{
   const d=$('#drugName').value.trim(),p=getCurrentPrice(d);
@@ -701,93 +685,61 @@ function nearestKnownDrug(raw){
   }
   return score<=0.34?best:raw;
 }
+let countParts=[];
 function parseCountText(text){
-  const nums=(String(text||'').match(/\d{1,4}/g)||[]).map(Number).filter(x=>x>0&&x<5000);
-  if(!nums.length)return null;
-  // For the tiny count crop the largest plausible token is usually the count.
-  return nums.sort((a,b)=>b-a)[0];
+  const clean=String(text||'').replace(/[Oo]/g,'0').replace(/[Il|]/g,'1');
+  const nums=(clean.match(/\d{1,4}/g)||[]).map(Number).filter(x=>x>0&&x<5000);
+  return nums.length ? nums[0] : null;
 }
-async function ocrCanvas(canvas, lang, opts={}){
-  if(!window.Tesseract) throw new Error('OCR 엔진을 불러오지 못했습니다.');
-  const res=await Tesseract.recognize(canvas,lang,{logger:m=>{
-    if(m.status==='recognizing text'){
-      const el=$('#shareDebugStatus');
-      if(el)el.textContent=`약명/T수 읽는 중… ${Math.round((m.progress||0)*100)}%`;
-    }
-  }});
+async function ocrCountCanvas(canvas){
+  if(!window.Tesseract) throw new Error('숫자 인식 엔진을 불러오지 못했습니다.');
+  const res=await Tesseract.recognize(canvas,'eng',{
+    tessedit_char_whitelist:'0123456789',
+    preserve_interword_spaces:'0',
+    logger:m=>{if(m.status==='recognizing text') $('#shareDebugStatus').textContent=`숫자 읽는 중… ${Math.round((m.progress||0)*100)}%`;}
+  });
   return (res.data&&res.data.text)||'';
 }
-async function recognizeActualPillens(blob){
-  const img=await imageFromBlob(blob);
-  const ratio=img.naturalHeight/img.naturalWidth;
-
-  // 필렌즈 상세정보 화면(세로형) 기준.
-  // 약 개수 숫자와 메모 내용 영역을 서로 따로 읽는다.
-  const presets = ratio > 1.7 ? [
-    {count:[0.02,0.555,0.30,0.635], drug:[0.03,0.735,0.95,0.865]},
-    {count:[0.02,0.535,0.34,0.625], drug:[0.03,0.705,0.95,0.855]}
-  ] : [
-    {count:[0.68,0.56,0.98,0.69], drug:[0.03,0.66,0.86,0.82]}
+function countCrops(img){
+  // 사용자가 보내는 필렌즈 9:19.5 상세/결과 화면 기준.
+  // 큰 계수 숫자는 사진 아래, 화면 중앙에 고정되어 있다.
+  // 약 사진/상단 UI/시간/메모는 모두 제외한다.
+  return [
+    canvasCrop(img,0.28,0.615,0.72,0.765,4.0,true),
+    canvasCrop(img,0.22,0.600,0.78,0.790,3.5,true),
+    canvasCrop(img,0.32,0.635,0.68,0.745,4.5,true)
   ];
-
-  let best={drug:'',qty:null,score:-1,countCanvas:null,drugCanvas:null,countRaw:'',drugRaw:''};
-
-  for(const pr of presets){
-    const cc=canvasCrop(img,...pr.count,3.5,true);
-    const dc=canvasCrop(img,...pr.drug,3.0,true);
-
-    const [ct,dt]=await Promise.all([
-      ocrCanvas(cc,'eng'),
-      ocrCanvas(dc,'kor+eng')
-    ]);
-
-    const qty=parseCountText(ct);
-    let drug=nearestKnownDrug(cleanDrugText(dt));
-
-    if(drug){
-      drug=drug
-        .replace(/^(메모|memo)\s*/i,'')
-        .replace(/\s{2,}/g,' ')
-        .trim();
-    }
-
-    let score=(qty!=null?3:0)+(drug?3:0);
-    if(qty!=null && qty>0 && qty<3000) score+=1;
-    if(drug && /[가-힣]/.test(drug)) score+=1;
-    if(drug && /(약개수|촬영일시|상세정보|저장내역|저장)/i.test(drug)) score-=4;
-
-    if(score>best.score){
-      best={drug,qty,score,countCanvas:cc,drugCanvas:dc,countRaw:ct,drugRaw:dt};
-    }
+}
+async function recognizePillensCount(blob,add=true){
+  const img=await imageFromBlob(blob);
+  const crops=countCrops(img);
+  let best={qty:null,raw:'',canvas:null,quality:-1};
+  for(const c of crops){
+    const raw=await ocrCountCanvas(c);
+    const qty=parseCountText(raw);
+    let quality=qty!=null?10:0;
+    if(/^\s*\d{1,4}\s*$/.test(raw))quality+=5;
+    if(qty!=null && qty<1000)quality+=2;
+    if(quality>best.quality)best={qty,raw,canvas:c,quality};
   }
-
-  if(best.countCanvas){
-    $('#countCropPreview').src=best.countCanvas.toDataURL('image/jpeg',.9);
-    $('#drugCropPreview').src=best.drugCanvas.toDataURL('image/jpeg',.9);
+  if(best.canvas){
+    $('#countCropPreview').src=best.canvas.toDataURL('image/jpeg',.92);
     $('#cropDebug').classList.remove('hidden');
   }
-
-  if(best.drug){
-    $('#drugName').value=best.drug;
-    const price=getCurrentPrice(best.drug);
-    if(price!=null) $('#unitPrice').value=price;
-    $('#priceHistoryNote').textContent=priceHistoryText(best.drug)?`약가 이력: ${priceHistoryText(best.drug)}`:'';
+  if(best.qty==null){
+    $('#shareDebugStatus').innerHTML='<b style="color:#ad3c3c">숫자를 읽지 못했습니다.</b> 아래 수량칸에 직접 입력할 수 있습니다.';
+    $('#shareDebugMeta').classList.remove('hidden');
+    $('#shareDebugMeta').textContent=`숫자 OCR 원문: ${best.raw.trim()||'(없음)'}`;
+    return best;
   }
-  if(best.qty!=null) $('#qty').value=best.qty;
-
+  if(add) countParts.push(best.qty); else countParts=[best.qty];
+  const total=countParts.reduce((a,b)=>a+b,0);
+  $('#qty').value=total;
   calcItem();
-  renderExistingResults();
-
-  const ok=best.drug && best.qty!=null;
-  $('#shareDebugStatus').innerHTML = ok
-    ? `<b style="color:#087d63">필렌즈 자동인식 성공: ${esc(best.drug)} · ${best.qty}T</b><br><span style="font-weight:400">틀리면 아래 약명/T수 입력칸에서 바로 수정할 수 있습니다.</span>`
-    : `<b style="color:#ad3c3c">필렌즈 자동인식 일부 실패</b> — 아래 입력칸과 잘라낸 영역을 확인해 주세요.`;
-
+  $('#shareDebugStatus').innerHTML=`<b style="color:#087d63">숫자 인식 성공: ${best.qty}T</b>${countParts.length>1?` · 누적 <b>${total}T</b>`:''}`;
   $('#shareDebugMeta').classList.remove('hidden');
-  $('#shareDebugMeta').textContent=
-    `수량 OCR 원문: ${best.countRaw.trim()||'(없음)'}\n`+
-    `메모 OCR 원문: ${best.drugRaw.trim()||'(없음)'}`;
-
+  $('#shareDebugMeta').textContent=`이번 인식: ${best.qty}T\n누적: ${countParts.join(' + ')} = ${total}T\nOCR 원문: ${best.raw.trim()||'(없음)'}`;
+  $('#ocrStatus').innerHTML=`인식된 수량: <b>${countParts.join(' + ')} = ${total}T</b>`;
   return best;
 }
 
@@ -805,52 +757,27 @@ async function loadSharedImage(){
     const item=await new Promise((resolve,reject)=>{
       const tx=db.transaction('shares','readwrite'),store=tx.objectStore('shares');
       const get=store.get('latest');
-      get.onsuccess=()=>{
-        const v=get.result;
-        if(v)store.delete('latest');
-        resolve(v);
-      };
+      get.onsuccess=()=>{const v=get.result;if(v)store.delete('latest');resolve(v)};
       get.onerror=()=>reject(get.error);
     });
-
-    if(!item || !item.blob){
-      $('#shareDebugStatus').textContent='아직 필렌즈에서 공유받은 파일이 없습니다.';
-      return;
+    if(!item)return;
+    const blobs=item.blobs&&item.blobs.length?item.blobs:(item.blob?[item.blob]:[]);
+    if(!blobs.length)return;
+    for(let i=0;i<blobs.length;i++){
+      const b=blobs[i];
+      const file=new File([b],(item.names&&item.names[i])||item.name||`pillens-${i+1}.jpg`,{type:b.type||item.type||'image/jpeg'});
+      currentPhotoData=await compressImage(file);
+      $('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display='block';
+      $('#shareDebugImage').src=URL.createObjectURL(file);$('#shareDebugImage').style.display='block';
+      await recognizePillensCount(file,true);
     }
-
-    const file=new File([item.blob],item.name||'shared-image',{type:item.type||item.blob.type||'application/octet-stream'});
-    lastPillensFile=file;
-
-    const rawUrl=URL.createObjectURL(file);
-    $('#shareDebugImage').src=rawUrl;
-    $('#shareDebugImage').style.display='block';
-
-    const sizeKB=(file.size/1024).toFixed(1);
-    $('#shareDebugStatus').innerHTML='<b style="color:#087d63">공유 파일 수신 성공</b>';
-    $('#shareDebugMeta').classList.remove('hidden');
-    $('#shareDebugMeta').textContent=
-      `파일명: ${file.name}
-`+
-      `MIME: ${file.type||'(없음)'}
-`+
-      `크기: ${sizeKB} KB
-`+
-      `수신시각: ${new Date(item.savedAt||Date.now()).toLocaleString('ko-KR')}`;
-
-    // Also feed the actual app preview so we can verify the exact payload.
-    currentPhotoData=await compressImage(file);
-    $('#pillEyePreview').src=currentPhotoData;
-    $('#pillEyePreview').style.display='block';
-    $('#shareStatus').innerHTML='<b style="color:#087d63">필렌즈 공유파일을 실제로 받았습니다.</b> 위 테스트 영역에서 전달된 원본 형태를 확인하세요.';
-    $('#ocrStatus').textContent='실제 필렌즈 화면 구조에 맞춰 수량 영역과 메모 영역을 따로 읽습니다.';
-    $('#retryOcr').classList.add('hidden');
+    $('#shareStatus').innerHTML=`<b style="color:#087d63">필렌즈 공유파일 ${blobs.length}장 수신.</b> 숫자만 읽어 누적했습니다.`;
     window.scrollTo({top:0,behavior:'smooth'});
-    await recognizeActualPillens(file);
   }catch(e){
-    console.error('shared image load failed',e);
-    $('#shareDebugStatus').innerHTML='<b style="color:#ad3c3c">공유 수신 처리 실패</b><br>'+esc(String(e&&e.message||e));
+    console.error(e);$('#shareDebugStatus').innerHTML='<b style="color:#ad3c3c">공유 수신 처리 실패</b><br>'+esc(String(e&&e.message||e));
   }
 }
+
 if('serviceWorker' in navigator){
   window.addEventListener('load',async()=>{
     try{
