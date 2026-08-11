@@ -73,7 +73,7 @@ details summary{cursor:pointer;font-weight:800}
 </head>
 <body>
 <header>
-  <h1>낱알반품 관리</h1>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v16</span></div>
   <p>필렌즈에서 계수 → 내보내기 → 약 개수 자동인식 → 약명 직접 입력 → 낱알반품 등록</p>
 </header>
 
@@ -91,7 +91,10 @@ details summary{cursor:pointer;font-weight:800}
     <img id="countCropPreview" class="preview" style="display:block;max-height:180px">
   </div>
   <img id="shareDebugImage" class="preview" style="margin-top:10px">
-  <div class="row" style="margin-top:10px"><button class="secondary" id="clearSharedDebug">누적 수량 초기화</button></div>
+  <div class="row" style="margin-top:10px">
+<button class="secondary" id="forceUpdateBtn" style="margin-top:8px">최신버전 확인</button>
+<div id="updateStatus" class="note" style="margin-top:6px"></div>
+<button class="secondary" id="clearSharedDebug">누적 수량 초기화</button></div>
 </section>
 
 <section class="card">
@@ -500,6 +503,28 @@ $('#clearSharedDebug').onclick=async()=>{
   $('#shareDebugImage').style.display='none';$('#cropDebug').classList.add('hidden');$('#countCropPreview').src='';countParts=[];$('#qty').value='';calcItem();
 };
 
+
+if($('#forceUpdateBtn')){
+  $('#forceUpdateBtn').onclick=async()=>{
+    const s=$('#updateStatus');
+    try{
+      s.textContent='최신버전 확인 중…';
+      if(!('serviceWorker' in navigator)){s.textContent='서비스워커를 지원하지 않는 브라우저입니다.';return}
+      const reg=await navigator.serviceWorker.getRegistration('./');
+      if(!reg){s.textContent='서비스워커가 아직 등록되지 않았습니다. 페이지를 새로고침해 주세요.';return}
+      await reg.update();
+      if(reg.waiting){
+        s.textContent='새 버전 발견. 적용 중…';
+        reg.waiting.postMessage({type:'SKIP_WAITING'});
+      }else{
+        s.textContent='현재 최신 버전입니다. (v16)';
+      }
+    }catch(e){
+      s.textContent='업데이트 확인 실패: '+(e.message||e);
+    }
+  };
+}
+
 $('#sentDate').value=today();refreshWholesalers();renderRecords();
 }
 function batchStats(b){
@@ -779,12 +804,37 @@ async function loadSharedImage(){
 }
 
 if('serviceWorker' in navigator){
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(refreshing)return;
+    refreshing=true;
+    location.reload();
+  });
+
   window.addEventListener('load',async()=>{
     try{
-      await navigator.serviceWorker.register('./service-worker.js');
+      const reg=await navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'});
+      await reg.update();
+
+      // 새 서비스워커가 대기 중이면 즉시 교체 요청
+      if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+
+      reg.addEventListener('updatefound',()=>{
+        const nw=reg.installing;
+        if(!nw)return;
+        nw.addEventListener('statechange',()=>{
+          if(nw.state==='installed' && navigator.serviceWorker.controller){
+            nw.postMessage({type:'SKIP_WAITING'});
+          }
+        });
+      });
+
       await navigator.serviceWorker.ready;
       await loadSharedImage();
-    }catch(e){console.error('service worker registration failed',e)}
+    }catch(e){
+      console.error('service worker registration failed',e);
+      await loadSharedImage();
+    }
   });
 }else{
   window.addEventListener('load',loadSharedImage);
