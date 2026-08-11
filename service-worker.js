@@ -1,4 +1,4 @@
-const CACHE='pill-return-v19-sharefix';
+const CACHE='pill-return-v20-photofix';
 const STATIC=['./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',event=>{

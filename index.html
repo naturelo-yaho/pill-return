@@ -81,7 +81,7 @@ details summary{cursor:pointer;font-weight:800}
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v19</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v20</span></div>
   <p>필렌즈에서 계수 → 내보내기 → 약 개수 자동인식 → 약명 직접 입력 → 낱알반품 등록</p>
 </header><div id="shareHealth" style="display:none"></div>
 
@@ -103,7 +103,7 @@ details summary{cursor:pointer;font-weight:800}
   <div class="upload">
     <input id="pillEyePhoto" type="file" accept="image/*" >
     <button class="primary" id="pillEyeBtn">📷 필렌즈 사진 1장 선택</button>
-    <div class="note" style="margin-top:8px">필렌즈에서 내보낸 화면을 그대로 보내세요. 약이 많아 2~3번 나눠 센 경우 사진을 차례로 공유하거나 여러 장을 한 번에 선택하면 <b>수량을 합산</b>합니다.</div>
+    <div class="note" style="margin-top:8px">필렌즈에서 내보낸 사진을 선택하세요. 같은 약을 여러 번 나눠 센 경우에만 아래 <b>+ 같은 약 추가 촬영</b>을 누르면 합산됩니다.</div>
     <img id="pillEyePreview" class="preview">
     <div id="shareStatus" class="note" style="margin-top:8px"></div>
     <div id="ocrStatus" class="hidden" class="note" style="margin-top:8px"></div>
@@ -581,7 +581,7 @@ $('#clearSharedDebug').onclick=async()=>{
       tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
     });
   }catch(e){}
-  $('#shareDebugStatus').textContent='누적 수량을 초기화했습니다. 필렌즈에서 다음 사진을 보내세요.';
+  if($('#shareStatus'))$('#shareStatus').textContent='누적 수량을 초기화했습니다. 필렌즈에서 다음 사진을 보내세요.';
   $('#shareDebugMeta').classList.add('hidden');
   $('#shareDebugMeta').textContent='';
   $('#shareDebugImage').src='';
@@ -602,7 +602,7 @@ if($('#forceUpdateBtn')){
         s.textContent='새 버전 발견. 적용 중…';
         reg.waiting.postMessage({type:'SKIP_WAITING'});
       }else{
-        s.textContent='현재 최신 버전입니다. (v19)';
+        s.textContent='현재 최신 버전입니다. (v20)';
       }
     }catch(e){
       s.textContent='업데이트 확인 실패: '+(e.message||e);
@@ -614,7 +614,7 @@ if($('#forceUpdateBtn')){
 
 if($('#addAnotherShot'))$('#addAnotherShot').onclick=()=>{
   appendShotMode=true;
-  const inp=$('#pillensPhoto')||$('#pillEyePhoto');
+  const inp=$('#pillEyePhoto');
   if(inp)inp.click();
 };
 
@@ -685,11 +685,37 @@ function addDeduction(id){
   b.deductions=b.deductions||[];b.deductions.push({id:uid(),date,amount,note});store(BATCH,rows);renderRecords();
 }
 
-$('#pillEyeBtn').onclick=()=>$('#pillEyePhoto').click();
+$('#pillEyeBtn').onclick=()=>{
+  appendShotMode=false;
+  const inp=$('#pillEyePhoto');
+  if(inp)inp.click();
+};
+
 $('#pillEyePhoto').onchange=async e=>{
-  const files=[...e.target.files];if(!files.length)return;
-  for(const f of files) await recognizePillensCount(f,true);
-  e.target.value='';
+  const file=e.target.files&&e.target.files[0];
+  if(!file)return;
+
+  // 선택 직후 원본 미리보기부터 보여준다. OCR이 실패해도 사진 불러오기는 성공한 것을 확인 가능.
+  try{
+    const photo=await compressImage(file,720,.72);
+    currentPhotoData=photo;
+    const preview=$('#pillEyePreview');
+    if(preview){
+      preview.src=photo;
+      preview.style.display='block';
+    }
+    const status=$('#shareStatus');
+    if(status)status.textContent='사진 불러오기 완료. 숫자 읽는 중…';
+
+    await recognizePillensCount(file,appendShotMode);
+  }catch(err){
+    console.error(err);
+    const status=$('#shareStatus');
+    if(status)status.innerHTML='<b style="color:#ad3c3c">사진 처리 중 오류가 발생했습니다.</b>';
+  }finally{
+    appendShotMode=false;
+    e.target.value='';
+  }
 };
 $('#drugName').addEventListener('input',renderExistingResults);
 $('#drugName').addEventListener('change',()=>{
@@ -839,7 +865,7 @@ async function ocrCountCanvas(canvas){
   const res=await Tesseract.recognize(canvas,'eng',{
     tessedit_char_whitelist:'0123456789',
     preserve_interword_spaces:'0',
-    logger:m=>{if(m.status==='recognizing text') $('#shareDebugStatus').textContent=`숫자 읽는 중… ${Math.round((m.progress||0)*100)}%`;}
+    logger:m=>{if(m.status==='recognizing text'){const s=$('#shareStatus');if(s)s.textContent=`숫자 읽는 중… ${Math.round((m.progress||0)*100)}%`;}}
   });
   return (res.data&&res.data.text)||'';
 }
@@ -853,46 +879,64 @@ function countCrops(img){
     canvasCrop(img,0.32,0.635,0.68,0.745,4.5,true)
   ];
 }
-async function recognizePillensCount(blob,add=true){
-  const img=await imageFromBlob(blob);
-  const crops=countCrops(img);
-  let best={qty:null,raw:'',canvas:null,quality:-1};
-  for(const c of crops){
-    const raw=await ocrCountCanvas(c);
-    const qty=parseCountText(raw);
-    let quality=qty!=null?10:0;
-    if(/^\s*\d{1,4}\s*$/.test(raw))quality+=5;
-    if(qty!=null && qty<1000)quality+=2;
-    if(quality>best.quality)best={qty,raw,canvas:c,quality};
-  }
-  if(best.canvas){
-    $('#countCropPreview').src=best.canvas.toDataURL('image/jpeg',.92);
-    $('#cropDebug').classList.remove('hidden');
-  }
-  if(best.qty==null){
-    $('#shareDebugStatus').innerHTML='<b style="color:#ad3c3c">숫자를 읽지 못했습니다.</b> 아래 수량칸에 직접 입력할 수 있습니다.';
-    $('#shareDebugMeta').classList.remove('hidden');
-    $('#shareDebugMeta').textContent=`숫자 OCR 원문: ${best.raw.trim()||'(없음)'}`;
+async function recognizePillensCount(blob,add=false){
+  const status=$('#shareStatus');
+  try{
+    const img=await imageFromBlob(blob);
+    const crops=countCrops(img);
+    let best={qty:null,raw:'',canvas:null,quality:-1};
+
+    if(status)status.textContent='숫자 읽는 중…';
+
+    for(const c of crops){
+      const raw=await ocrCountCanvas(c);
+      const qty=parseCountText(raw);
+      let quality=qty!=null?10:0;
+      if(/^\s*\d{1,4}\s*$/.test(raw))quality+=5;
+      if(qty!=null && qty<1000)quality+=2;
+      if(quality>best.quality)best={qty,raw,canvas:c,quality};
+    }
+
+    if(best.qty==null){
+      if(status)status.innerHTML='<b style="color:#ad3c3c">숫자를 읽지 못했습니다.</b> 수량을 직접 입력해 주세요.';
+      return best;
+    }
+
+    const fullPhoto=await compressImage(blob,720,.72);
+
+    if(add){
+      countParts.push(best.qty);
+      countShots.push({qty:best.qty,photo:fullPhoto});
+    }else{
+      countParts=[best.qty];
+      countShots=[{qty:best.qty,photo:fullPhoto}];
+    }
+
+    const total=countParts.reduce((a,b)=>a+b,0);
+    currentPhotoData=fullPhoto;
+
+    const preview=$('#pillEyePreview');
+    if(preview){
+      preview.src=fullPhoto;
+      preview.style.display='block';
+    }
+
+    renderCountShots();
+    $('#qty').value=total;
+    calcItem();
+
+    if(status){
+      status.innerHTML=countParts.length>1
+        ? `<b style="color:#087d63">${countParts.join(' + ')} = ${total}T</b>`
+        : `<b style="color:#087d63">${best.qty}T 인식</b>`;
+    }
+
     return best;
+  }catch(e){
+    console.error('count recognition failed',e);
+    if(status)status.innerHTML='<b style="color:#ad3c3c">사진은 불러왔지만 숫자 인식에 실패했습니다.</b> 수량은 직접 입력할 수 있습니다.';
+    return {qty:null,error:e};
   }
-  const fullPhoto=await compressImage(blob,720,.72);
-  if(add){
-    countParts.push(best.qty);
-    countShots.push({qty:best.qty,photo:fullPhoto});
-  }else{
-    countParts=[best.qty];
-    countShots=[{qty:best.qty,photo:fullPhoto}];
-  }
-  const total=countParts.reduce((a,b)=>a+b,0);
-  currentPhotoData=fullPhoto;
-  renderCountShots();
-  $('#qty').value=total;
-  calcItem();
-  $('#shareDebugStatus').innerHTML=`<b style="color:#087d63">숫자 인식 성공: ${best.qty}T</b>${countParts.length>1?` · 누적 <b>${total}T</b>`:''}`;
-  $('#shareDebugMeta').classList.remove('hidden');
-  $('#shareDebugMeta').textContent=`이번 인식: ${best.qty}T\n누적: ${countParts.join(' + ')} = ${total}T\nOCR 원문: ${best.raw.trim()||'(없음)'}`;
-  $('#ocrStatus').innerHTML=`인식된 수량: <b>${countParts.join(' + ')} = ${total}T</b>`;
-  return best;
 }
 
 function openShareDB(){
@@ -924,14 +968,13 @@ async function loadSharedImage(){
       const file=new File([b],(item.names&&item.names[i])||item.name||`pillens-${i+1}.jpg`,{type:b.type||item.type||'image/jpeg'});
       currentPhotoData=await compressImage(file);
       $('#pillEyePreview').src=currentPhotoData;$('#pillEyePreview').style.display='block';
-      if($('#shareDebugImage')){$('#shareDebugImage').src=URL.createObjectURL(file);$('#shareDebugImage').style.display='block';}
-      await recognizePillensCount(file, keepExisting || i>0);
+await recognizePillensCount(file, keepExisting || i>0);
     }
     appendShotMode=false;
     $('#shareStatus').innerHTML=`<b style="color:#087d63">필렌즈 사진 ${blobs.length}장 수신 완료.</b> 숫자를 읽어 입력했습니다.`;
     window.scrollTo({top:0,behavior:'smooth'});
   }catch(e){
-    console.error(e);$('#shareDebugStatus').innerHTML='<b style="color:#ad3c3c">공유 수신 처리 실패</b><br>'+esc(String(e&&e.message||e));
+    console.error(e);if($('#shareStatus'))$('#shareStatus').innerHTML='<b style="color:#ad3c3c">공유 수신 처리 실패</b><br>'+esc(String(e&&e.message||e));
   }
 }
 
