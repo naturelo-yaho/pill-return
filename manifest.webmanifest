@@ -1,8 +1,7 @@
 {
   "name": "낱알반품 관리",
   "short_name": "낱알반품",
-  "description": "필렌즈 스크린샷 숫자 인식 및 낱알/약 반품 관리 앱",
-  "start_url": "./?app=v26",
+  "start_url": "./?app=v27",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f3f6f5",
