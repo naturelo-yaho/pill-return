@@ -1,52 +1,68 @@
 
-const CACHE='pill-return-v40-historyui';
-const SHARE_CACHE='pill-return-shares';
-const ASSETS=['./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const CACHE_NAME = 'pill-return-v49';
+const APP_SHELL = [
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './icon-192.png',
+  './icon-512.png'
+];
 
-self.addEventListener('install',e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
+self.addEventListener('install', event => {
+  self.skipWaiting();
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
 });
-self.addEventListener('activate',e=>{
-  e.waitUntil(
-    caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&k!==SHARE_CACHE).map(k=>caches.delete(k))))
-    .then(()=>self.clients.claim())
-  );
+
+self.addEventListener('activate', event => {
+  event.waitUntil((async()=>{
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });
 
-async function injectPatch(req){
-  const r=await fetch(req,{cache:'no-store'});
-  const ct=r.headers.get('content-type')||'';
-  if(!ct.includes('text/html'))return r;
-  let text=await r.text();
-  // 표시 버전도 v40로 보이게 변경
-  text=text.replace(/(<span id="appVersion"[^>]*>)v\d+(<\/span>)/,'$1v40$2');
-  const h=new Headers(r.headers);h.set('content-type','text/html; charset=utf-8');h.delete('content-length');
-  return new Response(text,{status:r.status,statusText:r.statusText,headers:h});
-}
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  const url = new URL(req.url);
 
-self.addEventListener('fetch',event=>{
-  const url=new URL(event.request.url);
-  if(event.request.method==='POST'&&url.pathname.endsWith('/share-target')){
+  if (req.method === 'POST' && url.searchParams.get('share') === '1') {
     event.respondWith((async()=>{
-      try{
-        const form=await event.request.formData();let file=null;
-        for(const [,v] of form.entries()){
-          if(v instanceof File&&(!v.type||v.type.startsWith('image/'))){file=v;break;}
+      const form = await req.formData();
+      const files = form.getAll('files').filter(x => x && x.type && x.type.startsWith('image/'));
+      const cache = await caches.open('pill-return-share-v49');
+
+      const keys = [];
+      for (let i=0;i<files.length;i++){
+        const key = new Request('./__shared_image_' + Date.now() + '_' + i);
+        await cache.put(key, new Response(files[i], {headers:{'Content-Type':files[i].type}}));
+        keys.push(key.url);
+      }
+
+      const clientList = await self.clients.matchAll({type:'window', includeUncontrolled:true});
+      if (clientList.length) {
+        for (const c of clientList) {
+          c.postMessage({type:'PILL_RETURN_SHARED_IMAGES', keys});
         }
-        if(!file)throw new Error('image file missing');
-        const id=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
-        const key=new Request(new URL('./shared/'+id,self.registration.scope).href);
-        const c=await caches.open(SHARE_CACHE);
-        await c.put(key,new Response(file,{headers:{'Content-Type':file.type||'image/png'}}));
-        return Response.redirect('./?share='+encodeURIComponent(id),303);
-      }catch(e){return Response.redirect('./?share_error=1',303);}
-    })());return;
+      }
+
+      const redirect = './?shared=' + encodeURIComponent(keys.join('|'));
+      return Response.redirect(redirect, 303);
+    })());
+    return;
   }
-  if(event.request.method!=='GET')return;
-  if(event.request.mode==='navigate'||event.request.destination==='document'){
-    event.respondWith(injectPatch(event.request).catch(()=>caches.match('./index.html')));return;
+
+  if (req.mode === 'navigate') {
+    event.respondWith(fetch(req).catch(() => caches.match('./index.html')));
+    return;
   }
-  event.respondWith(fetch(event.request,{cache:'no-store'}).then(r=>{
-    const cp=r.clone();caches.open(CACHE).then(c=>c.put(event.request,cp)).catch(()=>{});return r;
-  }).catch(()=>caches.match(event.request)));
+
+  event.respondWith(
+    caches.match(req).then(cached => cached || fetch(req).then(resp => {
+      if (req.method === 'GET' && resp && resp.status === 200) {
+        const copy = resp.clone();
+        caches.open(CACHE_NAME).then(c => c.put(req, copy));
+      }
+      return resp;
+    }))
+  );
 });

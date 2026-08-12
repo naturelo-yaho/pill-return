@@ -1,31 +1,34 @@
 {
   "name": "낱알반품 관리",
   "short_name": "낱알반품",
-  "start_url": "./?app=v40",
+  "start_url": "./?app=v49",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f3f6f5",
-  "theme_color": "#087d63",
+  "background_color": "#f4f8f6",
+  "theme_color": "#0b8b70",
+  "description": "낱알반품 및 완통반품 관리",
   "icons": [
     {
-      "src": "./icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "./icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
   "share_target": {
-    "action": "./share-target",
+    "action": "./?share=1",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
+      "title": "title",
+      "text": "text",
       "files": [
         {
-          "name": "image",
+          "name": "files",
           "accept": [
             "image/*"
           ]

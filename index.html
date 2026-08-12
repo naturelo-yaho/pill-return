@@ -301,16 +301,536 @@ details summary{cursor:pointer;font-weight:800}
   }
 }
 
+
+/* ===== v41 반품기록 전용 레이아웃 ===== */
+#records{
+  margin-top:10px;
+}
+.v41-history-head,
+.v41-history-row{
+  display:grid;
+  grid-template-columns: 86px minmax(54px,1fr) 78px 78px;
+  column-gap:6px;
+  align-items:center;
+  width:100%;
+  box-sizing:border-box;
+}
+.v41-history-head{
+  padding:9px 12px;
+  margin-bottom:6px;
+  border-radius:12px;
+  background:#f0f5f3;
+  color:#66756f;
+  font-size:10px;
+  font-weight:800;
+}
+.v41-history-head > span:nth-child(3),
+.v41-history-head > span:nth-child(4){
+  text-align:right;
+}
+.v41-history-card{
+  border:1px solid #dfe7e4;
+  border-radius:16px;
+  background:#fff;
+  overflow:hidden;
+  margin:8px 0;
+  box-shadow:0 1px 3px rgba(20,50,40,.035);
+}
+.v41-history-row{
+  padding:13px 12px;
+  cursor:pointer;
+  min-height:48px;
+  -webkit-tap-highlight-color:transparent;
+}
+.v41-history-row:active{
+  background:#f7faf9;
+}
+.v41-history-row .v41-date,
+.v41-history-row .v41-whole,
+.v41-history-row .v41-money{
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  min-width:0;
+  line-height:1.2;
+}
+.v41-history-row .v41-date{
+  font-size:12px;
+  font-weight:800;
+}
+.v41-history-row .v41-whole{
+  font-size:12px;
+  font-weight:700;
+}
+.v41-history-row .v41-money{
+  font-size:12px;
+  font-weight:800;
+  text-align:right;
+}
+.v41-history-row .v41-deduct.plus{
+  color:#087d63;
+}
+.v41-history-detail{
+  display:none;
+  border-top:1px solid #e5ebe9;
+  padding:14px 12px 16px;
+  background:#fff;
+}
+.v41-history-card.open .v41-history-detail{
+  display:block;
+}
+.v41-detail-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:12px;
+}
+.v41-detail-title b{
+  font-size:15px;
+}
+.v41-status{
+  border-radius:999px;
+  padding:5px 9px;
+  background:#edf7f3;
+  color:#087d63;
+  font-size:11px;
+  font-weight:800;
+  white-space:nowrap;
+}
+.v41-items-head,
+.v41-item-row{
+  display:grid;
+  grid-template-columns:minmax(104px,1fr) 42px 68px 76px;
+  column-gap:6px;
+  align-items:center;
+}
+.v41-items-head{
+  padding:8px 4px;
+  border-radius:10px;
+  background:#f5f8f7;
+  color:#68746f;
+  font-size:10px;
+  font-weight:800;
+}
+.v41-items-head > span:nth-child(n+2){
+  text-align:right;
+}
+.v41-item-row{
+  padding:10px 4px;
+  border-bottom:1px solid #edf1ef;
+  font-size:12px;
+}
+.v41-item-row .drug{
+  min-width:0;
+  font-weight:800;
+  line-height:1.25;
+  overflow-wrap:anywhere;
+  word-break:keep-all;
+}
+.v41-item-row .qty,
+.v41-item-row .unit,
+.v41-item-row .amount{
+  text-align:right;
+  white-space:nowrap;
+}
+.v41-item-row .amount{
+  font-weight:800;
+}
+.v41-detail-summary{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-top:14px;
+}
+.v41-detail-summary .box{
+  padding:11px 6px;
+  border-radius:12px;
+  background:#f4f7f6;
+  text-align:center;
+}
+.v41-detail-summary .box.diff{
+  background:#eef4ff;
+}
+.v41-detail-summary small{
+  display:block;
+  color:#69756f;
+  font-size:10px;
+  margin-bottom:3px;
+}
+.v41-detail-summary b{
+  font-size:14px;
+}
+.v41-deductions{
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:#fafcfc;
+  font-size:12px;
+  line-height:1.55;
+}
+.v41-actions{
+  display:flex;
+  gap:8px;
+  margin-top:12px;
+}
+.v41-actions button{
+  flex:1;
+}
+@media(max-width:380px){
+  .v41-history-head,
+  .v41-history-row{
+    grid-template-columns:82px minmax(48px,1fr) 72px 72px;
+    column-gap:4px;
+  }
+  .v41-history-head{
+    padding-left:9px;
+    padding-right:9px;
+    font-size:9px;
+  }
+  .v41-history-row{
+    padding-left:9px;
+    padding-right:9px;
+  }
+  .v41-history-row .v41-date,
+  .v41-history-row .v41-whole,
+  .v41-history-row .v41-money{
+    font-size:11px;
+  }
+  .v41-items-head,
+  .v41-item-row{
+    grid-template-columns:minmax(90px,1fr) 38px 62px 68px;
+    column-gap:4px;
+  }
+  .v41-item-row{font-size:11px;}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<style>
+/* v43 compact mobile layout */
+#drugName{min-height:54px!important;padding:10px 14px!important}
+#pillQty{min-height:64px!important;padding:8px 12px!important;font-size:34px!important}
+#qtyMinus,#qtyPlus{display:none!important}
+#drugForm .note{display:none!important}
+#drugForm .field{margin-bottom:10px!important}
+#drugForm .calcBox{padding:12px!important;margin:8px 0!important}
+#drugForm h2{margin-bottom:12px!important}
+#todayList .itemCard{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) auto auto auto!important;
+ align-items:center!important;
+ gap:10px!important;
+ padding:14px 16px!important;
+ min-height:0!important;
+}
+#todayList .itemCard>*{margin:0!important}
+#todayList .itemCard .itemMain{display:contents!important}
+#todayList .itemCard .itemName{min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#todayList .itemCard .itemMeta{white-space:nowrap!important}
+#todayList .itemCard .itemActions{display:flex!important;gap:6px!important}
+#todayList .itemCard img,#todayList .itemCard .shotThumbs,#todayList .itemCard .photoBlock{display:none!important}
+/* wholesaler history is visually last */
+#wholesalerHistory,#returnHistory,#historySection{order:999!important}
+@media(max-width:600px){
+ #todayList .itemCard{grid-template-columns:minmax(90px,1fr) auto auto!important;gap:7px!important}
+ #todayList .itemCard .itemActions{grid-column:1/-1!important;justify-self:end!important}
+}
+</style>
+
+<style>
+#qtyMinus,#qtyPlus{display:none!important}
+</style>
+
+<style>
+#qtyMinus,#qtyPlus,
+.qtyMinus,.qtyPlus,.qty-minus,.qty-plus,
+[data-action="minus"],[data-action="plus"]{display:none!important}
+</style>
+
+<style>
+/* v46 완통반품 */
+.bottle-table-head,.bottle-row{
+  display:grid;
+  grid-template-columns:minmax(110px,1fr) 82px 54px 88px 46px;
+  gap:6px;
+  align-items:center;
+}
+.bottle-table-head{
+  padding:9px 8px;
+  border-radius:10px;
+  background:#f4f7f6;
+  color:#6b7772;
+  font-size:11px;
+  font-weight:800;
+}
+.bottle-table-head span:nth-child(n+2){text-align:right}
+.bottle-row{
+  padding:11px 8px;
+  border-bottom:1px solid #edf1ef;
+  font-size:13px;
+}
+.bottle-row .drug{
+  min-width:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-weight:800;
+}
+.bottle-row .num,.bottle-row .amount{text-align:right;white-space:nowrap}
+.bottle-row .amount{font-weight:800}
+.bottle-row button{
+  padding:7px 6px;
+  border:0;
+  border-radius:8px;
+  background:#fdeeee;
+  color:#a74343;
+  font-weight:800;
+}
+.bottle-summary{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-top:12px;
+}
+.bottle-summary>div{
+  background:#edf7f3;
+  border-radius:12px;
+  padding:11px 6px;
+  text-align:center;
+}
+.bottle-summary small{display:block;color:#6b7772;font-size:11px}
+.bottle-summary b{font-size:17px}
+.bottle-history-head,.bottle-history-row{
+  display:grid;
+  grid-template-columns:95px minmax(70px,1fr) 96px;
+  gap:8px;
+  align-items:center;
+}
+.bottle-history-head{
+  padding:9px 10px;
+  background:#f4f7f6;
+  border-radius:10px;
+  color:#6b7772;
+  font-size:11px;
+  font-weight:800;
+}
+.bottle-history-head span:last-child{text-align:right}
+.bottle-history-card{
+  border:1px solid #e0e7e4;
+  border-radius:13px;
+  overflow:hidden;
+  margin-top:8px;
+}
+.bottle-history-row{
+  padding:12px 10px;
+  cursor:pointer;
+}
+.bottle-history-row b:last-child{text-align:right}
+.bottle-history-detail{
+  display:none;
+  border-top:1px solid #e6ece9;
+  padding:10px;
+}
+.bottle-history-card.open .bottle-history-detail{display:block}
+@media(max-width:420px){
+  .bottle-table-head,.bottle-row{
+    grid-template-columns:minmax(84px,1fr) 70px 42px 74px 40px;
+    gap:4px;
+    font-size:11px;
+  }
+}
+</style>
+
+
+<style>
+/* ===== v47 완통반품 디테일 정렬 통일 ===== */
+
+/* 카드 내부 기본 간격 통일 */
+#bottleReturnPanel .card{
+  padding:18px !important;
+}
+#bottleReturnPanel h2{
+  margin:0 0 14px !important;
+  line-height:1.25 !important;
+}
+#bottleReturnPanel label{
+  display:block !important;
+  margin:0 0 6px !important;
+  line-height:1.2 !important;
+  font-size:13px !important;
+  color:#6b7772 !important;
+}
+
+/* 모든 입력칸 높이/폰트/패딩 완전 통일 */
+#bottleReturnPanel input,
+#bottleReturnPanel select{
+  width:100% !important;
+  height:56px !important;
+  min-height:56px !important;
+  box-sizing:border-box !important;
+  padding:0 14px !important;
+  border:1px solid #d8e1de !important;
+  border-radius:14px !important;
+  background:#fff !important;
+  font-size:17px !important;
+  line-height:56px !important;
+  margin:0 !important;
+}
+
+/* 날짜/도매상 2열 크기 동일 */
+#bottleReturnPanel .bottle-send-grid{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+  align-items:start !important;
+}
+#bottleReturnPanel .bottle-send-grid > div{
+  min-width:0 !important;
+}
+
+/* 완통반품 목록: 열 폭 고정 + 모두 수직 중앙 */
+.bottle-table-head,
+.bottle-row{
+  display:grid !important;
+  grid-template-columns:minmax(0,1.45fr) 88px 58px 92px 52px !important;
+  gap:8px !important;
+  align-items:center !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+.bottle-table-head{
+  padding:10px 10px !important;
+  min-height:42px !important;
+}
+.bottle-row{
+  padding:12px 10px !important;
+  min-height:52px !important;
+}
+.bottle-table-head > span,
+.bottle-row > *{
+  margin:0 !important;
+  line-height:1.2 !important;
+}
+.bottle-table-head > span:nth-child(1),
+.bottle-row .drug{
+  text-align:left !important;
+}
+.bottle-table-head > span:nth-child(2),
+.bottle-table-head > span:nth-child(3),
+.bottle-table-head > span:nth-child(4),
+.bottle-row .num,
+.bottle-row .amount{
+  text-align:right !important;
+}
+
+/* 요약 카드 3개 높이/패딩 동일 */
+.bottle-summary{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:8px !important;
+  margin-top:14px !important;
+}
+.bottle-summary > div{
+  min-height:92px !important;
+  padding:12px 8px !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  align-items:center !important;
+}
+.bottle-summary small{
+  margin-bottom:5px !important;
+  line-height:1.2 !important;
+}
+.bottle-summary b{
+  line-height:1.2 !important;
+}
+
+/* 총금액 박스도 동일한 리듬 */
+#bottleReturnPanel .totalBox{
+  padding:16px !important;
+  min-height:104px !important;
+  box-sizing:border-box !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+#bottleReturnPanel .totalBox .note{
+  margin:0 0 6px !important;
+  line-height:1.2 !important;
+}
+#bottleReturnPanel .totalBox b{
+  line-height:1.1 !important;
+}
+
+/* 버튼 높이/모서리 통일 */
+#bottleReturnPanel button{
+  min-height:48px !important;
+  border-radius:14px !important;
+  line-height:1.15 !important;
+}
+#bottleAddItem,
+#bottleCloseBatch{
+  height:56px !important;
+}
+
+/* 모바일에서 표가 삐뚤어지지 않도록 축소 */
+@media(max-width:420px){
+  #bottleReturnPanel .card{
+    padding:16px !important;
+  }
+
+  .bottle-table-head,
+  .bottle-row{
+    grid-template-columns:minmax(0,1.3fr) 76px 48px 80px 46px !important;
+    gap:5px !important;
+    font-size:11px !important;
+  }
+
+  #bottleReturnPanel input,
+  #bottleReturnPanel select{
+    height:54px !important;
+    min-height:54px !important;
+    line-height:54px !important;
+    font-size:16px !important;
+  }
+
+  .bottle-summary > div{
+    min-height:86px !important;
+  }
+}
+</style>
+
+
+<style>
+/* v48 낱알 오늘반품 요약 2칸 정렬 */
+#draftSummary,
+.draftSummary,
+.today-summary{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v40</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v49</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
-<div class="wrap">
+<div class="wrap" id="appWrap">
+
+<section id="mainReturnSwitcher" style="padding:0;background:transparent;border:0;box-shadow:none;margin-bottom:10px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <button type="button" id="mainLooseTab" class="primary" style="padding:14px;font-size:16px">낱알반품</button>
+    <button type="button" id="mainBottleTab" class="secondary" style="padding:14px;font-size:16px">완통반품</button>
+  </div>
+</section>
+
 
 <section class="card" id="inputModeCard">
   <h2>반품 형태</h2>
@@ -337,7 +857,7 @@ details summary{cursor:pointer;font-weight:800}
       <input id="ptpQty" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 155">
     </div>
     <div>
-      <label>1T당 반품금액(원)</label>
+      <label>1T 금액(원)</label>
       <input id="ptpUnitPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="예: 23">
       <div id="ptpPriceHistoryNote" class="note" style="margin-top:6px"></div>
     </div>
@@ -353,9 +873,9 @@ details summary{cursor:pointer;font-weight:800}
 <section class="card" id="loosePhotoSection">
   <h2>1. 필렌즈 계수사진</h2>
   <div class="upload">
-    <input id="pillEyePhoto" type="file" accept="image/*" >
-    <button class="primary" id="pillEyeBtn">📷 필렌즈 스크린샷 1장 선택</button>
-    <div class="note" style="margin-top:8px">필렌즈 계수화면을 스크린샷한 뒤 선택하세요. 같은 약을 여러 번 나눠 센 경우에만 아래 <b>+ 같은 약 추가 촬영</b>을 누르면 합산됩니다.</div>
+    <input id="pillEyePhoto" type="file" accept="image/*" multiple>
+    <button class="primary" id="pillEyeBtn">📷 필렌즈 스크린샷 선택</button>
+    <div class="note" style="margin-top:8px">같은 약을 여러 장으로 나눠 센 경우 <b>사진을 한 번에 여러 장 선택</b>하면 각 사진의 수량을 자동으로 합산합니다.</div>
     <img id="pillEyePreview" class="preview">
     <div id="shareStatus" class="note" style="margin-top:8px"></div>
     <div id="ocrStatus" class="hidden" class="note" style="margin-top:8px"></div>
@@ -366,9 +886,9 @@ details summary{cursor:pointer;font-weight:800}
 <section class="card" id="shotHistoryCard">
   <div class="row" style="align-items:center">
     <h2 style="margin:0;flex:1">계수사진</h2>
-    <button class="secondary" id="addAnotherShot">+ 같은 약 추가 촬영</button>
+    
   </div>
-  <div id="singleShotSummary" class="note" style="margin-top:8px">사진 1장으로 계수하면 여기에는 최종 수량만 표시됩니다.</div>
+  <div id="singleShotSummary" class="note" style="margin-top:8px">선택한 계수사진과 합산 수량이 표시됩니다.</div>
   <div id="multiShotArea" class="hidden">
     <div id="shotFormula" class="totalBox" style="margin-top:10px"></div>
     <div id="shotList" class="shotList"></div>
@@ -382,25 +902,25 @@ details summary{cursor:pointer;font-weight:800}
   <label>약 이름</label>
   <input id="drugName" list="drugMaster" autocomplete="off" placeholder="처음 약이면 직접 입력, 기존 약이면 일부만 검색">
   <datalist id="drugMaster"></datalist>
-  <div class="note" style="margin-top:6px">약 이름을 직접 입력하세요. 기존 약은 입력한 이름이 정확히 일치하면 최근 가격을 자동으로 불러옵니다.</div>
+  <div class="note" style="margin-top:6px"></div>
   <div id="existingResults" class="hidden"></div>
 
   <div class="grid2" style="margin-top:12px">
     <div>
-      <label><span id="qtyLabel">필렌즈에서 센 수량(T)</span></label>
+      <label><span id="qtyLabel">수량(T)</span></label>
       <div class="countBox">
         <input id="qty" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 15">
         <div class="row" style="justify-content:center;margin-top:8px">
-          <button class="secondary" id="minusQty">-1</button>
-          <button class="secondary" id="plusQty">+1</button>
+          
+          
         </div>
       </div>
     </div>
     <div>
-      <label>1T당 반품금액(원)</label>
+      <label>1T 금액(원)</label>
       <input id="unitPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="예: 45">
       <div class="note" style="margin-top:6px">
-        기존 약은 최근 가격이 자동으로 들어옵니다. 약가가 바뀌면 수정하세요. 과거 마감 기록은 그대로 유지됩니다.
+        
       </div>
       <div id="priceHistoryNote" class="note" style="margin-top:6px"></div>
     </div>
@@ -423,7 +943,7 @@ details summary{cursor:pointer;font-weight:800}
   <div id="draftItems"></div>
   <div class="summary">
     <div class="sum"><small>품목 수</small><b id="draftKinds">0종</b></div>
-    <div class="sum"><small>총 수량</small><b id="draftQty">0T</b></div>
+    
     <div class="sum"><small>총 금액</small><b id="draftTotal">0원</b></div>
   </div>
 </section>
@@ -494,6 +1014,78 @@ details summary{cursor:pointer;font-weight:800}
     <div id="wholeManage"></div>
   </details>
 </section>
+
+
+<div id="bottleReturnPanel" style="display:none">
+  <section class="card">
+    <h2 style="margin-bottom:12px">완통반품 입력</h2>
+    <div style="display:grid;gap:10px">
+      <div>
+        <label>약 이름</label>
+        <input id="bottleDrugName" list="bottleDrugMaster" autocomplete="off" placeholder="약 이름">
+        <datalist id="bottleDrugMaster"></datalist>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label>1통당 금액(원)</label>
+          <input id="bottleUnitPrice" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 12500">
+        </div>
+        <div>
+          <label>총 수량(통)</label>
+          <input id="bottleQty" type="number" min="0" step="1" inputmode="numeric" placeholder="예: 3">
+        </div>
+      </div>
+    </div>
+    <div class="totalBox" style="margin-top:12px">
+      <div class="note">해당 약 총 금액</div>
+      <b id="bottleItemTotal">0원</b>
+    </div>
+    <button type="button" class="primary" id="bottleAddItem" style="width:100%;margin-top:10px">이 약 추가 완료</button>
+  </section>
+
+  <section class="card">
+    <div class="row" style="align-items:center">
+      <h2 style="margin:0;flex:1">오늘 완통반품할 약</h2>
+      <button type="button" class="secondary" id="bottleNewItem">+ 다음 약 추가</button>
+    </div>
+
+    <div class="bottle-table-head" style="margin-top:12px">
+      <span>약명</span><span>1통 금액</span><span>수량</span><span>금액</span><span></span>
+    </div>
+    <div id="bottleDraftList"></div>
+
+    <div class="bottle-summary">
+      <div><small>품목 수</small><b id="bottleKinds">0종</b></div>
+      <div><small>총 수량</small><b id="bottleTotalQty">0통</b></div>
+      <div><small>총 금액</small><b id="bottleGrandTotal">0원</b></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>완통반품 보내기</h2>
+    <div class="bottle-send-grid">
+      <div>
+        <label>보낸 날짜</label>
+        <input id="bottleSentDate" type="date">
+      </div>
+      <div>
+        <label>도매상</label>
+        <input id="bottleWholesaler" list="bottleWholesalers" placeholder="도매상">
+        <datalist id="bottleWholesalers"></datalist>
+      </div>
+    </div>
+    <div class="totalBox" style="margin-top:12px">
+      <div class="note">이번 완통반품 총 금액</div>
+      <b id="bottleCloseTotal">0원</b>
+    </div>
+    <button type="button" class="primary" id="bottleCloseBatch" style="width:100%;margin-top:10px">오늘 완통반품 마감</button>
+  </section>
+
+  <section class="card">
+    <h2>완통반품 기록</h2>
+    <div id="bottleHistory"></div>
+  </section>
+</div>
 
 </div>
 
@@ -633,7 +1225,7 @@ function refreshMaster(){
     const newDrug=newDrugRaw.trim();
     if(!newDrug){alert('약 이름을 입력해 주세요.');return}
 
-    const newPriceRaw=prompt('1T당 반품금액(원)',oldPrice??'');
+    const newPriceRaw=prompt('1T 금액(원)',oldPrice??'');
     if(newPriceRaw===null)return;
     const newPrice=n(String(newPriceRaw).replace(/,/g,''));
     if(newPrice<0){alert('가격을 확인해 주세요.');return}
@@ -951,7 +1543,7 @@ function addItem(){
   const drug=$('#drugName').value.trim(),qty=n($('#qty').value),price=n($('#unitPrice').value);
   if(!currentPhotoData){alert('필렌즈 계수사진을 먼저 선택해 주세요.');return}
   if(!drug){alert('약 이름을 입력해 주세요.');return}
-  if(qty<=0){alert('필렌즈에서 센 수량(T)을 입력해 주세요.');return}
+  if(qty<=0){alert('수량(T)을 입력해 주세요.');return}
 
   draftItems.push({
     id:uid(),drug,qty,unitPrice:price,total:qty*price,
@@ -1073,11 +1665,6 @@ if($('#forceUpdateBtn')){
 
 
 
-if($('#addAnotherShot'))$('#addAnotherShot').onclick=()=>{
-  appendShotMode=true;
-  const inp=$('#pillEyePhoto');
-  if(inp){ inp.value=''; inp.click(); }
-};
 
 if($('#clearShots'))$('#clearShots').onclick=()=>{
   if(!countShots.length || confirm('현재 약의 계수사진과 합산내역을 모두 지울까요?')){
@@ -1193,80 +1780,76 @@ function renderRecords(){
   }
 
   $('#records').innerHTML=`
-    <div class="history-table-head">
+    <div class="v41-history-head">
       <span>날짜</span>
       <span>도매상</span>
-      <span style="text-align:right">총금액</span>
-      <span style="text-align:right">빠진금액</span>
-      <span></span>
+      <span>총금액</span>
+      <span>빠진금액</span>
     </div>
     ${rows.map(b=>{
       const st=batchStats(b);
       const diffText=(st.diff>0?'+':'')+won(st.diff);
+      const status=st.remain<.01?'차감완료':'차감중';
       return `
-        <details class="record" style="padding:0;overflow:hidden">
-          <summary class="history-row">
-            <span><b>${esc(b.sentDate||'')}</b></span>
-            <span class="whole"><b>${esc(b.wholesaler||'미지정')}</b></span>
-            <span class="num">${won(b.sentTotal)}</span>
-            <span class="num">${won(st.deducted)}</span>
-            <span class="arrow">›</span>
-          </summary>
+        <div class="v41-history-card" data-id="${b.id}">
+          <div class="v41-history-row historyToggle" data-id="${b.id}">
+            <span class="v41-date">${esc(b.sentDate||'')}</span>
+            <span class="v41-whole">${esc(b.wholesaler||'미지정')}</span>
+            <span class="v41-money">${won(b.sentTotal)}</span>
+            <span class="v41-money v41-deduct ${st.diff>0?'plus':''}">${won(st.deducted)}</span>
+          </div>
 
-          <div class="history-detail">
-            <div class="history-detail-top">
-              <div class="sum"><small>날짜</small><b>${esc(b.sentDate||'')}</b></div>
-              <div class="sum"><small>도매상</small><b>${esc(b.wholesaler||'미지정')}</b></div>
-              <div class="sum"><small>총금액</small><b>${won(b.sentTotal)}</b></div>
-              <div class="sum"><small>빠진금액</small><b>${won(st.deducted)}</b></div>
+          <div class="v41-history-detail">
+            <div class="v41-detail-title">
+              <b>${esc(b.sentDate||'')} · ${esc(b.wholesaler||'미지정')}</b>
+              <span class="v41-status">${status}</span>
             </div>
 
-            <div class="note" style="margin-bottom:8px">
-              ${st.remain<.01?'차감완료':'차감중'} · 품목 ${(b.items||[]).length}종
-            </div>
-
-            <div class="history-items-head">
+            <div class="v41-items-head">
               <span>약명</span>
-              <span style="text-align:right">수량</span>
-              <span style="text-align:right">1T 금액</span>
-              <span style="text-align:right">금액</span>
+              <span>수량</span>
+              <span>1T 금액</span>
+              <span>금액</span>
             </div>
 
-            ${(b.items||[]).map((i,idx)=>`
-              <div class="history-item-row">
-                <div style="display:flex;gap:7px;align-items:center;min-width:0">
-                  <span class="badge" style="flex:0 0 auto">${idx+1}</span>
-                  <b class="drug">${esc(i.drug)}</b>
-                </div>
+            ${(b.items||[]).map(i=>`
+              <div class="v41-item-row">
+                <span class="drug">${esc(i.drug)}</span>
                 <span class="qty">${i.qty}T</span>
                 <span class="unit">${won(i.unitPrice)}/T</span>
                 <span class="amount">${won(i.total)}</span>
               </div>`).join('')}
 
-            <div class="moneyPanel" style="margin-top:12px">
-              <div class="moneyBox"><small>총 반품금액</small><b>${won(b.sentTotal)}</b></div>
-              <div class="moneyBox"><small>실제 빠진금액</small><b>${won(st.deducted)}</b></div>
-              <div class="moneyBox diff"><small>차이</small><b>${diffText}</b></div>
+            <div class="v41-detail-summary">
+              <div class="box"><small>총 반품금액</small><b>${won(b.sentTotal)}</b></div>
+              <div class="box"><small>실제 빠진금액</small><b>${won(st.deducted)}</b></div>
+              <div class="box diff"><small>차이</small><b>${diffText}</b></div>
             </div>
 
             ${(b.deductions||[]).length?`
-              <div class="deduction" style="margin-top:10px">
+              <div class="v41-deductions">
                 <b>빠진금액 내역</b><br>
                 ${b.deductions.map((d,i)=>`${i+1}. ${d.date} · ${won(d.amount)}${d.note?' · '+esc(d.note):''}`).join('<br>')}
               </div>`:''}
 
-            ${b.memo?`<div class="note" style="margin-top:8px">메모: ${esc(b.memo)}</div>`:''}
+            ${b.memo?`<div class="note" style="margin-top:10px">메모: ${esc(b.memo)}</div>`:''}
 
-            <div class="row" style="margin-top:10px">
+            <div class="v41-actions">
               <button class="primary addDeduction" data-id="${b.id}">빠진금액 입력</button>
               <button class="danger delBatch" data-id="${b.id}">삭제</button>
             </div>
           </div>
-        </details>`;
+        </div>`;
     }).join('')}`;
 
-  $$('.addDeduction').forEach(b=>b.onclick=()=>{
-    const id=b.dataset.id,arr=load(BATCH,[]),batch=arr.find(x=>x.id===id);if(!batch)return;
+  $$('.historyToggle').forEach(row=>row.onclick=()=>{
+    const card=row.closest('.v41-history-card');
+    card.classList.toggle('open');
+  });
+
+  $$('.addDeduction').forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
+    const id=btn.dataset.id,arr=load(BATCH,[]),batch=arr.find(x=>x.id===id);if(!batch)return;
     const amount=n(prompt('이번에 실제로 빠진 금액(원)을 입력하세요.','0'));
     if(amount<=0)return;
     const date=prompt('빠진금액 날짜',today())||today();
@@ -1276,9 +1859,10 @@ function renderRecords(){
     store(BATCH,arr);renderRecords();
   });
 
-  $$('.delBatch').forEach(b=>b.onclick=()=>{
+  $$('.delBatch').forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
     if(!confirm('이 반품 기록을 삭제할까요?'))return;
-    store(BATCH,load(BATCH,[]).filter(x=>x.id!==b.dataset.id));
+    store(BATCH,load(BATCH,[]).filter(x=>x.id!==btn.dataset.id));
     renderRecords();
   });
 }
@@ -1292,34 +1876,47 @@ function addDeduction(id){
 }
 
 $('#pillEyeBtn').onclick=()=>{
-  appendShotMode=false;
   const inp=$('#pillEyePhoto');
-  if(inp)inp.click();
+  if(inp){inp.value='';inp.click();}
 };
 
 $('#pillEyePhoto').onchange=async e=>{
-  const file=e.target.files&&e.target.files[0];
-  if(!file)return;
+  const files=[...(e.target.files||[])];
+  if(!files.length)return;
 
-  // 선택 직후 원본 미리보기부터 보여준다. OCR이 실패해도 사진 불러오기는 성공한 것을 확인 가능.
+  // 새 파일 선택은 항상 현재 약의 새 계수 묶음으로 시작
+  countShots=[];
+  countParts=[];
+  currentPhotoData='';
+  renderCountShots();
+  syncShotTotal();
+
+  const status=$('#shareStatus');
   try{
-    const photo=await compressImage(file,720,.72);
-    currentPhotoData=photo;
-    const preview=$('#pillEyePreview');
-    if(preview){
-      preview.src=photo;
-      preview.style.display='block';
-    }
-    const status=$('#shareStatus');
-    if(status)status.textContent='사진 불러오기 완료. 숫자 읽는 중…';
+    for(let i=0;i<files.length;i++){
+      const file=files[i];
+      if(status)status.textContent=`사진 ${i+1}/${files.length} 읽는 중…`;
 
-    await recognizePillensCount(file,appendShotMode);
+      // 첫 장은 새 계수, 2장째부터 합산
+      const result=await recognizePillensCount(file,i>0);
+
+      // 숫자 인식 실패 시 이미 처리한 사진은 유지하고 안내
+      if(result && result.qty==null){
+        if(status)status.innerHTML=`<b style="color:#ad3c3c">${i+1}번째 사진 숫자 인식 실패</b><br>앞에서 읽은 사진은 유지됩니다.`;
+        break;
+      }
+    }
+
+    const total=countShots.reduce((s,x)=>s+(Number(x.qty)||0),0);
+    if(status && countShots.length){
+      status.innerHTML=countShots.length>1
+        ? `<b style="color:#087d63">${countShots.map(x=>x.qty).join(' + ')} = ${total}T</b><br><span class="note">${countShots.length}장 합산 완료</span>`
+        : `<b style="color:#087d63">${total}T 인식</b>`;
+    }
   }catch(err){
     console.error(err);
-    const status=$('#shareStatus');
     if(status)status.innerHTML='<b style="color:#ad3c3c">사진 처리 중 오류가 발생했습니다.</b>';
   }finally{
-    appendShotMode=false;
     e.target.value='';
   }
 };
@@ -1677,5 +2274,211 @@ document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){try{saveDraft()}catch(e){}}
 });
 </script>
+
+<script>
+window.addEventListener('DOMContentLoaded',()=>{
+  // 도매상별/반품내역 영역은 페이지 최하단으로 이동
+  const candidates=[...document.querySelectorAll('section,.card,div')];
+  const hist=candidates.filter(el=>{
+    const t=(el.querySelector(':scope > h2,:scope > h3')?.textContent||'').trim();
+    return /도매상별 반품내역|반품 내역|반품내역/.test(t);
+  });
+  const root=document.querySelector('main')||document.querySelector('.wrap')||document.body;
+  hist.forEach(el=>{ if(el.parentElement && el!==root) root.appendChild(el); });
+});
+</script>
+
+<script>
+(() => {
+  const BOTTLE_DRAFT='pill-return-bottle-draft-v46';
+  const BOTTLE_MASTER='pill-return-bottle-master-v46';
+  const BOTTLE_BATCH='pill-return-bottle-batches-v46';
+  const WHOLE_KEY='pill-return-wholesalers-v10';
+
+  const jload=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}};
+  const jstore=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+  const kwon=v=>new Intl.NumberFormat('ko-KR').format(Number(v)||0)+'원';
+  const ktoday=()=>new Date().toISOString().slice(0,10);
+
+  let bottleDraft=jload(BOTTLE_DRAFT,[]);
+
+  function refreshBottleMaster(){
+    const m=jload(BOTTLE_MASTER,{});
+    const dl=document.getElementById('bottleDrugMaster');
+    if(dl)dl.innerHTML=Object.keys(m).sort((a,b)=>a.localeCompare(b,'ko')).map(x=>`<option value="${x.replace(/"/g,'&quot;')}"></option>`).join('');
+  }
+
+  function refreshBottleWholesalers(){
+    const arr=jload(WHOLE_KEY,[]);
+    const dl=document.getElementById('bottleWholesalers');
+    if(dl)dl.innerHTML=arr.map(x=>`<option value="${String(x).replace(/"/g,'&quot;')}"></option>`).join('');
+  }
+
+  function bottleItemCalc(){
+    const p=Number(document.getElementById('bottleUnitPrice')?.value||0);
+    const q=Number(document.getElementById('bottleQty')?.value||0);
+    document.getElementById('bottleItemTotal').textContent=kwon(p*q);
+  }
+
+  function clearBottleItem(){
+    document.getElementById('bottleDrugName').value='';
+    document.getElementById('bottleUnitPrice').value='';
+    document.getElementById('bottleQty').value='';
+    bottleItemCalc();
+    document.getElementById('bottleDrugName').focus();
+  }
+
+  function renderBottleDraft(){
+    jstore(BOTTLE_DRAFT,bottleDraft);
+    const el=document.getElementById('bottleDraftList');
+    if(!el)return;
+    el.innerHTML=bottleDraft.length?bottleDraft.map((x,i)=>`
+      <div class="bottle-row">
+        <span class="drug">${x.drug}</span>
+        <span class="num">${kwon(x.unitPrice)}</span>
+        <span class="num">${x.qty}통</span>
+        <span class="amount">${kwon(x.total)}</span>
+        <button type="button" class="bottleDelete" data-i="${i}">삭제</button>
+      </div>`).join(''):'<div class="note" style="text-align:center;padding:16px">아직 추가한 약이 없습니다.</div>';
+
+    const kinds=bottleDraft.length;
+    const qty=bottleDraft.reduce((a,x)=>a+x.qty,0);
+    const total=bottleDraft.reduce((a,x)=>a+x.total,0);
+    document.getElementById('bottleKinds').textContent=kinds+'종';
+    document.getElementById('bottleTotalQty').textContent=qty+'통';
+    document.getElementById('bottleGrandTotal').textContent=kwon(total);
+    document.getElementById('bottleCloseTotal').textContent=kwon(total);
+
+    document.querySelectorAll('.bottleDelete').forEach(btn=>btn.onclick=()=>{
+      bottleDraft.splice(Number(btn.dataset.i),1);
+      renderBottleDraft();
+    });
+  }
+
+  function addBottleItem(){
+    const drug=document.getElementById('bottleDrugName').value.trim();
+    const unitPrice=Number(document.getElementById('bottleUnitPrice').value||0);
+    const qty=Number(document.getElementById('bottleQty').value||0);
+    if(!drug){alert('약 이름을 입력해 주세요.');return}
+    if(qty<=0){alert('총 수량을 입력해 주세요.');return}
+    bottleDraft.push({drug,unitPrice,qty,total:unitPrice*qty});
+    const m=jload(BOTTLE_MASTER,{});
+    m[drug]=unitPrice;
+    jstore(BOTTLE_MASTER,m);
+    refreshBottleMaster();
+    renderBottleDraft();
+    clearBottleItem();
+  }
+
+  function renderBottleHistory(){
+    const rows=jload(BOTTLE_BATCH,[]).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+    const el=document.getElementById('bottleHistory');
+    if(!el)return;
+    if(!rows.length){
+      el.innerHTML='<div class="note" style="text-align:center;padding:16px">완통반품 기록이 없습니다.</div>';
+      return;
+    }
+    el.innerHTML=`
+      <div class="bottle-history-head"><span>날짜</span><span>도매상</span><span>총금액</span></div>
+      ${rows.map((b,bi)=>`
+        <div class="bottle-history-card">
+          <div class="bottle-history-row bottleHistoryToggle">
+            <b>${b.date}</b><b>${b.wholesaler||'미지정'}</b><b>${kwon(b.total)}</b>
+          </div>
+          <div class="bottle-history-detail">
+            ${b.items.map(x=>`<div style="display:grid;grid-template-columns:minmax(90px,1fr) 70px 46px 80px;gap:6px;padding:8px 0;border-bottom:1px solid #edf1ef;font-size:12px">
+              <b>${x.drug}</b><span style="text-align:right">${kwon(x.unitPrice)}/통</span><span style="text-align:right">${x.qty}통</span><b style="text-align:right">${kwon(x.total)}</b>
+            </div>`).join('')}
+            <button type="button" class="danger bottleBatchDelete" data-id="${b.id}" style="margin-top:10px">기록 삭제</button>
+          </div>
+        </div>`).join('')}`;
+    document.querySelectorAll('.bottleHistoryToggle').forEach(x=>x.onclick=()=>x.parentElement.classList.toggle('open'));
+    document.querySelectorAll('.bottleBatchDelete').forEach(btn=>btn.onclick=()=>{
+      if(!confirm('이 완통반품 기록을 삭제할까요?'))return;
+      jstore(BOTTLE_BATCH,jload(BOTTLE_BATCH,[]).filter(x=>x.id!==btn.dataset.id));
+      renderBottleHistory();
+    });
+  }
+
+  function closeBottleBatch(){
+    if(!bottleDraft.length){alert('완통반품할 약을 먼저 추가해 주세요.');return}
+    const date=document.getElementById('bottleSentDate').value||ktoday();
+    const wholesaler=document.getElementById('bottleWholesaler').value.trim();
+    if(!wholesaler){alert('도매상을 입력해 주세요.');return}
+    const batches=jload(BOTTLE_BATCH,[]);
+    batches.push({
+      id:'B'+Date.now(),
+      date,wholesaler,
+      items:JSON.parse(JSON.stringify(bottleDraft)),
+      total:bottleDraft.reduce((a,x)=>a+x.total,0)
+    });
+    jstore(BOTTLE_BATCH,batches);
+    bottleDraft=[];
+    renderBottleDraft();
+    renderBottleHistory();
+    document.getElementById('bottleWholesaler').value='';
+    alert('완통반품이 별도 기록으로 마감되었습니다.');
+  }
+
+  function setMainReturnMode(mode){
+    const bottle=mode==='bottle';
+    const wrap=document.getElementById('appWrap');
+    [...wrap.children].forEach(el=>{
+      if(el.id==='mainReturnSwitcher')return;
+      if(el.id==='bottleReturnPanel')el.style.display=bottle?'block':'none';
+      else el.style.display=bottle?'none':'';
+    });
+    document.getElementById('mainLooseTab').className=bottle?'secondary':'primary';
+    document.getElementById('mainBottleTab').className=bottle?'primary':'secondary';
+    localStorage.setItem('pill-return-main-return-mode-v46',mode);
+  }
+
+  window.addEventListener('DOMContentLoaded',()=>{
+    document.getElementById('mainLooseTab').onclick=()=>setMainReturnMode('loose');
+    document.getElementById('mainBottleTab').onclick=()=>setMainReturnMode('bottle');
+
+    document.getElementById('bottleUnitPrice').addEventListener('input',bottleItemCalc);
+    document.getElementById('bottleQty').addEventListener('input',bottleItemCalc);
+    document.getElementById('bottleDrugName').addEventListener('change',()=>{
+      const m=jload(BOTTLE_MASTER,{});
+      const d=document.getElementById('bottleDrugName').value.trim();
+      if(m[d]!=null)document.getElementById('bottleUnitPrice').value=m[d];
+      bottleItemCalc();
+    });
+    document.getElementById('bottleAddItem').onclick=addBottleItem;
+    document.getElementById('bottleNewItem').onclick=clearBottleItem;
+    document.getElementById('bottleCloseBatch').onclick=closeBottleBatch;
+
+    document.getElementById('bottleSentDate').value=ktoday();
+    refreshBottleMaster();
+    refreshBottleWholesalers();
+    renderBottleDraft();
+    renderBottleHistory();
+
+    setMainReturnMode(localStorage.getItem('pill-return-main-return-mode-v46')||'loose');
+  });
+})();
+</script>
+
+
+<style>
+/* v48: 낱알반품 요약에서는 전체 낱알 총수량을 표시하지 않음 */
+#draftQty{display:none!important}
+#draftQtyCard{display:none!important}
+</style>
+<script>
+window.addEventListener('DOMContentLoaded',()=>{
+  const q=document.getElementById('draftQty');
+  if(q){
+    let box=q;
+    for(let i=0;i<3 && box.parentElement;i++){
+      if(/총\s*수량/.test(box.parentElement.textContent||'')){box=box.parentElement;break;}
+      box=box.parentElement;
+    }
+    if(box && /총\s*수량/.test(box.textContent||'')) box.style.display='none';
+  }
+});
+</script>
+
 </body>
 </html>
