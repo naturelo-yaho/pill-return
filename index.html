@@ -1398,10 +1398,90 @@ details summary{cursor:pointer;font-weight:800}
 }
 </style>
 
+
+<style>
+/* ===== v59 빠진금액 우측 삐져나옴 수정 ===== */
+
+/* 반품/차감 목록 5개 열을 실제 카드 폭 안에 정확히 수용 */
+.v41-history-head,
+.v41-history-row{
+  grid-template-columns:
+    minmax(76px,1.18fr)
+    minmax(48px,.82fr)
+    minmax(54px,.78fr)
+    minmax(66px,1fr)
+    minmax(66px,1fr) !important;
+  gap:4px !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  overflow:hidden !important;
+}
+
+/* 모든 셀은 자기 칸 안에서만 표시 */
+.v41-history-head > span,
+.v41-history-row > span{
+  min-width:0 !important;
+  max-width:100% !important;
+  box-sizing:border-box !important;
+}
+
+.v41-history-row .v41-date,
+.v41-history-row .v41-whole{
+  text-align:left !important;
+}
+
+.v41-history-row .v41-money,
+.v41-history-row .v41-deduct{
+  text-align:right !important;
+  padding-right:2px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:clip !important;
+}
+
+/* 금액은 폭이 좁아도 한 칸 안에 들어가도록 살짝 축소 */
+.v41-history-row .v41-money{
+  font-size:12px !important;
+  letter-spacing:-0.2px !important;
+}
+.v41-history-row .v41-deduct{
+  font-size:12px !important;
+  letter-spacing:-0.25px !important;
+}
+
+/* 헤더의 '빠진금액'도 우측 끝에 여유 확보 */
+.v41-history-head span:nth-child(5){
+  padding-right:2px !important;
+}
+
+/* 380px 이하에서는 열 비율을 더 압축 */
+@media(max-width:380px){
+  .v41-history-head,
+  .v41-history-row{
+    grid-template-columns:74px 50px 52px 62px 62px !important;
+    gap:3px !important;
+    padding-left:6px !important;
+    padding-right:6px !important;
+  }
+  .v41-history-row .v41-date,
+  .v41-history-row .v41-whole{
+    font-size:11.5px !important;
+  }
+  .v41-history-row .v41-money,
+  .v41-history-row .v41-deduct{
+    font-size:11px !important;
+  }
+  .v58-status{
+    font-size:9.5px !important;
+    padding:4px 3px !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v58</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v59</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
