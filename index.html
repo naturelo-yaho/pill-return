@@ -1803,10 +1803,312 @@ main,
 }
 </style>
 
+
+<style>
+/* ===== v64 오늘 반품할 약: 2단 구조로 잘림 완전 제거 ===== */
+#draftItems{
+  overflow:hidden !important;
+}
+
+/* 기존 v52/v63 6열 규칙을 사용하지 않음 */
+#draftItems .v64-draft-row{
+  width:100% !important;
+  box-sizing:border-box !important;
+  padding:11px 12px !important;
+  border-bottom:1px solid var(--line) !important;
+  background:#fff !important;
+}
+#draftItems .v64-draft-row:last-child{
+  border-bottom:0 !important;
+}
+
+/* 위: 번호 + 약명 + 수정/삭제 */
+.v64-draft-top{
+  display:grid !important;
+  grid-template-columns:28px minmax(0,1fr) 92px !important;
+  gap:8px !important;
+  align-items:center !important;
+}
+.v64-draft-top .badge{
+  margin:0 !important;
+  align-self:center !important;
+}
+.v64-draft-name{
+  min-width:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+}
+.v64-draft-name b{
+  display:-webkit-box !important;
+  -webkit-box-orient:vertical !important;
+  -webkit-line-clamp:2 !important;
+  overflow:hidden !important;
+  white-space:normal !important;
+  word-break:keep-all !important;
+  overflow-wrap:anywhere !important;
+  text-overflow:ellipsis !important;
+  font-size:15px !important;
+  font-weight:900 !important;
+  line-height:1.2 !important;
+  max-height:2.4em !important;
+  margin:0 !important;
+}
+.v64-draft-name small{
+  margin-top:3px !important;
+  color:var(--muted) !important;
+  font-size:11px !important;
+  line-height:1.1 !important;
+}
+
+.v64-draft-actions{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:5px !important;
+  width:92px !important;
+}
+.v64-draft-actions button{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:38px !important;
+  padding:6px 3px !important;
+  margin:0 !important;
+  border-radius:11px !important;
+  font-size:12px !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+
+/* 아래: 수량 / 1T금액 / 금액을 동일 3열로 정렬 */
+.v64-draft-bottom{
+  margin-top:9px !important;
+  margin-left:36px !important;
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:6px !important;
+  align-items:stretch !important;
+}
+.v64-metric{
+  min-width:0 !important;
+  padding:7px 6px !important;
+  border-radius:10px !important;
+  background:#f2f8fc !important;
+  text-align:center !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  line-height:1.15 !important;
+}
+.v64-metric small{
+  display:block !important;
+  color:var(--muted) !important;
+  font-size:9px !important;
+  margin-bottom:3px !important;
+  white-space:nowrap !important;
+}
+.v64-metric b,
+.v64-metric span{
+  display:block !important;
+  min-width:0 !important;
+  font-size:12px !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+.v64-metric b{
+  font-weight:900 !important;
+}
+
+/* 좁은 휴대폰에서도 약명 우선 */
+@media(max-width:380px){
+  #draftItems .v64-draft-row{
+    padding:10px 9px !important;
+  }
+  .v64-draft-top{
+    grid-template-columns:26px minmax(0,1fr) 82px !important;
+    gap:6px !important;
+  }
+  .v64-draft-actions{
+    width:82px !important;
+    gap:4px !important;
+  }
+  .v64-draft-actions button{
+    font-size:11px !important;
+    padding:6px 2px !important;
+  }
+  .v64-draft-name b{
+    font-size:14px !important;
+  }
+  .v64-draft-bottom{
+    margin-left:32px !important;
+    gap:5px !important;
+  }
+  .v64-metric{
+    padding:6px 4px !important;
+  }
+  .v64-metric b,
+  .v64-metric span{
+    font-size:11px !important;
+  }
+}
+</style>
+
+
+<style>
+/* ===== v65 사용자가 요청한 최종 약 목록 구조 ===== */
+
+/* 카드 한 품목 */
+#draftItems .v64-draft-row{
+  padding:12px 12px !important;
+}
+
+/* 첫 줄: 번호 + 약명 + 수정/삭제 */
+.v64-draft-top{
+  display:grid !important;
+  grid-template-columns:30px minmax(0,1fr) 96px !important;
+  gap:8px !important;
+  align-items:start !important;
+}
+
+/* 약명은 더 이상 ... 처리하지 않고 전부 표시 */
+.v64-draft-name b{
+  display:block !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+  max-height:none !important;
+  -webkit-line-clamp:unset !important;
+  -webkit-box-orient:unset !important;
+  word-break:keep-all !important;
+  overflow-wrap:anywhere !important;
+  font-size:15px !important;
+  line-height:1.24 !important;
+  font-weight:900 !important;
+  margin:0 !important;
+}
+
+/* 기존 약명 아래 작은 형태표시는 숨김.
+   형태/사진수는 아래 한 줄의 첫 칸에 따로 배치 */
+.v64-draft-name small{
+  display:none !important;
+}
+
+/* 수정/삭제는 첫 줄 우측에 고정 */
+.v64-draft-actions{
+  width:96px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:5px !important;
+  align-self:center !important;
+}
+.v64-draft-actions button{
+  min-height:40px !important;
+  font-size:12px !important;
+  padding:7px 3px !important;
+}
+
+/* 둘째 줄: 형태/사진수 | 수량 | 1T 금액 | 금액 */
+.v64-draft-bottom{
+  margin-top:8px !important;
+  margin-left:38px !important;
+  display:grid !important;
+  grid-template-columns:minmax(86px,1.2fr) 56px 92px 100px !important;
+  gap:8px !important;
+  align-items:center !important;
+  width:calc(100% - 38px) !important;
+  box-sizing:border-box !important;
+}
+
+/* 기존 3개 metric 스타일은 평평한 한 줄 텍스트로 */
+.v64-metric{
+  background:transparent !important;
+  border-radius:0 !important;
+  padding:0 !important;
+  min-height:28px !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  text-align:right !important;
+}
+.v64-metric small{
+  display:none !important;
+}
+.v64-metric b,
+.v64-metric span{
+  font-size:13px !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+
+/* 형태 칸을 JS에서 추가 */
+.v65-meta{
+  min-width:0 !important;
+  font-size:12px !important;
+  color:var(--muted) !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+/* 모바일 폭 */
+@media(max-width:480px){
+  .v64-draft-top{
+    grid-template-columns:28px minmax(0,1fr) 86px !important;
+    gap:6px !important;
+  }
+  .v64-draft-actions{
+    width:86px !important;
+    gap:4px !important;
+  }
+  .v64-draft-actions button{
+    font-size:11px !important;
+    padding:6px 2px !important;
+  }
+
+  .v64-draft-bottom{
+    margin-left:34px !important;
+    width:calc(100% - 34px) !important;
+    grid-template-columns:minmax(74px,1.15fr) 48px 78px 88px !important;
+    gap:5px !important;
+  }
+  .v64-metric b,
+  .v64-metric span{
+    font-size:12px !important;
+  }
+  .v65-meta{
+    font-size:11px !important;
+  }
+}
+
+/* 아주 좁은 화면 */
+@media(max-width:380px){
+  .v64-draft-top{
+    grid-template-columns:26px minmax(0,1fr) 80px !important;
+  }
+  .v64-draft-actions{
+    width:80px !important;
+  }
+  .v64-draft-bottom{
+    margin-left:32px !important;
+    width:calc(100% - 32px) !important;
+    grid-template-columns:minmax(68px,1fr) 44px 70px 78px !important;
+    gap:4px !important;
+  }
+  .v64-metric b,
+  .v64-metric span{
+    font-size:11px !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v63</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v65</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -2530,18 +2832,23 @@ function renderDraft(){
   saveDraft();
 
   const rows=draftItems.map((x,i)=>`
-    <div class="v52-draft-row">
-      <span class="badge">${i+1}</span>
-      <div class="v52-draft-name">
-        <b class="${(x.photo||(x.countShots&&x.countShots.length))?'photoClickable':''} draftDrugPhoto" data-id="${x.id}">${esc(x.drug)}</b>
-        <small>${x.inputMode==='ptp'?'PTP':'낱알'}${x.countShots&&x.countShots.length>1?' · '+x.countShots.length+'장':''}</small>
+    <div class="v64-draft-row">
+      <div class="v64-draft-top">
+        <span class="badge">${i+1}</span>
+        <div class="v64-draft-name">
+          <b class="${(x.photo||(x.countShots&&x.countShots.length))?'photoClickable':''} draftDrugPhoto" data-id="${x.id}">${esc(x.drug)}</b>
+          <small>${x.inputMode==='ptp'?'PTP':'낱알'}${x.countShots&&x.countShots.length>1?' · '+x.countShots.length+'장':''}</small>
+        </div>
+        <div class="v64-draft-actions">
+          <button class="secondary editDraft" data-id="${x.id}">수정</button>
+          <button class="danger delDraft" data-id="${x.id}">삭제</button>
+        </div>
       </div>
-      <b class="v52-draft-num">${x.qty}T</b>
-      <span class="v52-draft-price">${won(x.unitPrice)}/T</span>
-      <b class="v52-draft-total">${won(x.total)}</b>
-      <div class="v52-draft-actions">
-        <button class="secondary editDraft" data-id="${x.id}">수정</button>
-        <button class="danger delDraft" data-id="${x.id}">삭제</button>
+      <div class="v64-draft-bottom">
+        <div class="v65-meta">${x.inputMode==='ptp'?'PTP':'낱알'}${x.countShots&&x.countShots.length>1?' · '+x.countShots.length+'장':''}</div>
+        <div class="v64-metric"><small>수량</small><b>${x.qty}T</b></div>
+        <div class="v64-metric"><small>1T 금액</small><span>${won(x.unitPrice)}/T</span></div>
+        <div class="v64-metric"><small>금액</small><b>${won(x.total)}</b></div>
       </div>
     </div>`).join('');
 
