@@ -1329,10 +1329,79 @@ details summary{cursor:pointer;font-weight:800}
 }
 </style>
 
+
+<style>
+/* ===== v58 반품/차감 내역 구조 개선 ===== */
+.v41-history-head,
+.v41-history-row{
+  display:grid !important;
+  grid-template-columns:86px minmax(58px,1fr) 58px 72px 72px !important;
+  gap:4px !important;
+  align-items:center !important;
+  box-sizing:border-box !important;
+}
+.v41-history-head{padding:9px 8px !important}
+.v41-history-row{padding:12px 8px !important}
+.v41-history-head span:nth-child(4),
+.v41-history-head span:nth-child(5),
+.v41-history-row .v41-money{text-align:right !important}
+.v41-history-head span:nth-child(3){text-align:center !important}
+
+.v58-status{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:5px 6px !important;
+  border-radius:999px !important;
+  font-size:11px !important;
+  line-height:1 !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+}
+.v58-status.pending{background:#fff4d8 !important;color:#8c6410 !important}
+.v58-status.done{background:#e7f6f0 !important;color:#087d63 !important}
+
+.v41-history-detail{
+  background:#f4f8f6 !important;
+  border-top:1px solid #dce7e2 !important;
+  padding:14px 10px 12px !important;
+}
+.v41-items-head{margin-top:0 !important}
+.v41-detail-summary .box,
+.v41-deductions{background:#fff !important}
+.v41-deductions{
+  border-radius:12px !important;
+  padding:12px !important;
+}
+
+.v41-history-row .v41-date,
+.v41-history-row .v41-whole,
+.v41-history-row .v41-money{
+  font-size:13px !important;
+  font-weight:800 !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+@media(max-width:380px){
+  .v41-history-head,
+  .v41-history-row{
+    grid-template-columns:80px 54px 54px 64px 64px !important;
+    gap:3px !important;
+  }
+  .v41-history-row .v41-date,
+  .v41-history-row .v41-whole,
+  .v41-history-row .v41-money{font-size:12px !important}
+  .v58-status{font-size:10px !important;padding:5px 4px !important}
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v57</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v58</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -2241,6 +2310,7 @@ function renderRecords(){
     <div class="v41-history-head">
       <span>날짜</span>
       <span>도매상</span>
+      <span>상태</span>
       <span>총금액</span>
       <span>빠진금액</span>
     </div>
@@ -2253,16 +2323,12 @@ function renderRecords(){
           <div class="v41-history-row historyToggle" data-id="${b.id}">
             <span class="v41-date">${esc(b.sentDate||'')}</span>
             <span class="v41-whole">${esc(b.wholesaler||'미지정')}</span>
+            <span class="v58-status ${status==='차감완료'?'done':'pending'}">${status}</span>
             <span class="v41-money">${won(b.sentTotal)}</span>
             <span class="v41-money v41-deduct ${st.diff>0?'plus':''}">${won(st.deducted)}</span>
           </div>
 
           <div class="v41-history-detail">
-            <div class="v41-detail-title">
-              <b>${esc(b.sentDate||'')} · ${esc(b.wholesaler||'미지정')}</b>
-              <span class="v41-status">${status}</span>
-            </div>
-
             <div class="v41-items-head">
               <span>약명</span>
               <span>수량</span>
