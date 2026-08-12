@@ -1220,10 +1220,23 @@ details summary{cursor:pointer;font-weight:800}
 }
 </style>
 
+
+<style>
+/* v54: 반품/차감 내역의 상단 행과 펼친 상세 제목을 같은 큰 글씨로 통일 */
+#historyList .histTop,
+#historyList .histTop *,
+#historyList .histDetail h3,
+#historyList .histDetail h3 *{
+  font-size:21px !important;
+  line-height:1.25 !important;
+  font-weight:900 !important;
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v53</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v54</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
