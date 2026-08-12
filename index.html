@@ -1478,10 +1478,139 @@ details summary{cursor:pointer;font-weight:800}
 }
 </style>
 
+
+<style>
+/* ===== v61 Ice Blue Theme ===== */
+:root{
+  --bg:#f3f9fd !important;
+  --card:#ffffff !important;
+  --text:#20303a !important;
+  --muted:#6f7f89 !important;
+  --line:#d8e7f0 !important;
+
+  --green:#69a9d3 !important;
+  --green-dark:#4f91be !important;
+  --green-soft:#eaf5fb !important;
+}
+
+/* 전체 배경 */
+html,body{
+  background:#f3f9fd !important;
+  color:#20303a !important;
+}
+
+/* 상단 바 */
+header,
+.appHeader,
+.topbar{
+  background:#6eaed7 !important;
+  color:#fff !important;
+}
+
+/* 카드 */
+.card,
+.v41-history-card,
+.bottle-history-card{
+  background:#fff !important;
+  border-color:#d8e7f0 !important;
+}
+
+/* 기본 버튼 */
+button.primary,
+.primary{
+  background:#67a9d4 !important;
+  color:#fff !important;
+}
+button.primary:hover,
+.primary:hover{
+  background:#5c9bc5 !important;
+}
+
+button.secondary,
+.secondary{
+  background:#edf6fb !important;
+  color:#31566d !important;
+  border-color:#d5e7f1 !important;
+}
+
+/* 칩/배지/연한 강조 영역 */
+.chip,
+.badge,
+.sum,
+.totalBox,
+.bottle-summary>div,
+.v41-detail-summary .box{
+  background:#edf7fc !important;
+}
+
+/* 선택된 입력모드/활성 탭 */
+.modeBtn.active,
+.tab.active,
+.selected,
+.activeMode{
+  background:#67a9d4 !important;
+  color:#fff !important;
+}
+
+/* 입력창 포커스 */
+input:focus,
+select:focus,
+textarea:focus{
+  border-color:#77b5dc !important;
+  box-shadow:0 0 0 2px rgba(119,181,220,.15) !important;
+}
+
+/* 펼친 하위 반품내역도 아이스블루 계열 */
+.v41-history-detail{
+  background:#eef7fc !important;
+  border-top-color:#d5e7f1 !important;
+}
+
+/* 차감완료는 기존 의미는 유지하되 블루-민트 계열 */
+.v58-status.done,
+.v41-status{
+  background:#e7f5f8 !important;
+  color:#2f7c8c !important;
+}
+
+/* 차감중은 구분을 위해 옅은 옐로우 유지 */
+.v58-status.pending{
+  background:#fff4d8 !important;
+  color:#8c6410 !important;
+}
+
+/* 위험/삭제는 기존 빨강 유지 */
+button.danger,
+.danger{
+  background:#fff0f0 !important;
+  color:#b44848 !important;
+}
+
+/* 도매상 버튼 */
+#wholesalerButtons .whBtn,
+#toggleWhManage{
+  background:#edf6fb !important;
+  color:#31566d !important;
+}
+
+/* 요약 박스 */
+.summary .sum,
+.bottle-summary>div{
+  background:#eaf5fb !important;
+}
+
+/* 스크롤 영역/섹션 배경이 흰색으로 튀지 않게 */
+main,
+.app,
+.container{
+  background:transparent !important;
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v59</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v61</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -1648,7 +1777,7 @@ details summary{cursor:pointer;font-weight:800}
 <section class="card">
   <div class="row">
     <h2 style="margin:0;flex:1">반품 / 차감 내역</h2>
-    <button class="secondary" id="exportBtn">전체 백업</button>
+    <button class="secondary" id="exportBtn">백업</button>
     <button class="secondary" id="importBtn">백업 복원</button>
     <input id="importFile" class="hidden" type="file" accept=".json,application/json">
   </div>
@@ -1657,7 +1786,6 @@ details summary{cursor:pointer;font-weight:800}
   </div>
   <div class="row" style="margin-bottom:8px">
     <div class="grow note">마지막 백업: <b id="lastBackupText">없음</b></div>
-    <button class="secondary" id="backupNowBtn">지금 백업</button>
   </div>
   <input id="search" class="search" placeholder="약명 · 도매상 · 날짜 검색">
   <div id="records"></div>

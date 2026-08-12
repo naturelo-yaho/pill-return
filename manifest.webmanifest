@@ -1,11 +1,11 @@
 {
   "name": "낱알반품 관리",
   "short_name": "낱알반품",
-  "start_url": "./?app=v59",
+  "start_url": "./?app=v61",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f3f6f5",
-  "theme_color": "#087d63",
+  "background_color": "#f3f9fd",
+  "theme_color": "#6eaed7",
   "description": "낱알·PTP·완통반품 관리",
   "icons": [
     {
