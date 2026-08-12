@@ -1073,10 +1073,157 @@ details summary{cursor:pointer;font-weight:800}
 }
 </style>
 
+
+<style>
+/* ===== v53 실제 사용 화면 보정 ===== */
+
+/* 오늘 반품할 약: 우측 버튼이 절대 잘리지 않도록 열 재설계 */
+#draftItems .v52-draft-row{
+  grid-template-columns:24px minmax(90px,1.35fr) 42px 60px 70px 96px !important;
+  gap:5px !important;
+  padding:9px 8px !important;
+  overflow:visible !important;
+}
+.v52-draft-actions{
+  width:96px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:4px !important;
+}
+.v52-draft-actions button{
+  width:100% !important;
+  min-width:0 !important;
+  padding:6px 4px !important;
+  font-size:11px !important;
+  white-space:nowrap !important;
+}
+.v52-draft-name b.photoClickable{
+  cursor:pointer;
+  text-decoration:underline;
+  text-decoration-style:dotted;
+  text-underline-offset:3px;
+}
+.v52-draft-name b.photoClickable:active{opacity:.65}
+
+/* 도매상별 반품내역: 제목-도매상명 크기 계층 통일 */
+#wholesalerCard > .row > h2{
+  font-size:21px !important;
+  line-height:1.2 !important;
+}
+#wholesalerHistory h3{
+  font-size:21px !important;
+  line-height:1.2 !important;
+  font-weight:900 !important;
+}
+#wholesalerHistory .note{
+  font-size:13px !important;
+  line-height:1.45 !important;
+}
+#wholesalerButtons .whBtn,
+#toggleWhManage{
+  font-size:14px !important;
+}
+
+/* 반품 상세 하단 버튼: 한 줄 고정, 글자 줄바꿈 금지 */
+.v41-actions{
+  display:grid !important;
+  grid-template-columns:1.15fr .8fr .8fr !important;
+  gap:8px !important;
+  align-items:stretch !important;
+}
+.v41-actions button{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:48px !important;
+  padding:8px 6px !important;
+  font-size:13px !important;
+  line-height:1.15 !important;
+  white-space:nowrap !important;
+  word-break:keep-all !important;
+}
+.v41-actions .addDeduction{
+  font-size:12px !important;
+}
+
+/* 사진 보기 모달 */
+#photoViewerModal{
+  position:fixed;
+  inset:0;
+  z-index:10001;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.82);
+  padding:18px;
+  box-sizing:border-box;
+}
+#photoViewerModal.open{display:flex}
+#photoViewerModal .photo-viewer-box{
+  position:relative;
+  width:min(680px,100%);
+  max-height:88vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+#photoViewerModal img{
+  max-width:100%;
+  max-height:76vh;
+  object-fit:contain;
+  border-radius:14px;
+  background:#fff;
+}
+#photoViewerTitle{
+  color:#fff;
+  font-size:17px;
+  font-weight:800;
+  text-align:center;
+}
+#photoViewerClose{
+  position:absolute;
+  right:0;
+  top:-48px;
+  width:42px;
+  height:42px;
+  border:0;
+  border-radius:50%;
+  background:#fff;
+  color:#17342c;
+  font-size:20px;
+  font-weight:900;
+}
+#photoViewerNav{
+  display:flex;
+  gap:8px;
+}
+#photoViewerNav button{
+  min-width:96px;
+  border:0;
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:800;
+}
+@media(max-width:480px){
+  #draftItems .v52-draft-row{
+    grid-template-columns:22px minmax(82px,1.28fr) 38px 54px 62px 88px !important;
+    gap:4px !important;
+    padding:8px 6px !important;
+  }
+  .v52-draft-actions{width:88px !important}
+  .v52-draft-actions button{font-size:10.5px !important;padding:5px 3px !important}
+  .v52-draft-name b{font-size:13px !important}
+  .v52-draft-name small{font-size:10px !important}
+  .v52-draft-num,.v52-draft-price,.v52-draft-total{font-size:11px !important}
+  .v41-actions button{font-size:12px !important}
+  .v41-actions .addDeduction{font-size:11px !important}
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v52</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v53</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -1804,7 +1951,7 @@ function renderDraft(){
     <div class="v52-draft-row">
       <span class="badge">${i+1}</span>
       <div class="v52-draft-name">
-        <b>${esc(x.drug)}</b>
+        <b class="${(x.photo||(x.countShots&&x.countShots.length))?'photoClickable':''} draftDrugPhoto" data-id="${x.id}">${esc(x.drug)}</b>
         <small>${x.inputMode==='ptp'?'PTP':'낱알'}${x.countShots&&x.countShots.length>1?' · '+x.countShots.length+'장':''}</small>
       </div>
       <b class="v52-draft-num">${x.qty}T</b>
@@ -1819,6 +1966,11 @@ function renderDraft(){
   $('#draftItems').innerHTML=rows||'<div class="note" style="text-align:center;padding:18px">아직 추가한 약이 없습니다.</div>';
   $('#draftKinds').textContent=draftItems.length+'종';
   $('#draftTotal').textContent=won(draftItems.reduce((s,x)=>s+x.total,0));
+
+  $$('.draftDrugPhoto').forEach(el=>el.onclick=()=>{
+    const x=draftItems.find(y=>y.id===el.dataset.id);
+    if(x) openDraftPhotoViewer(x);
+  });
 
   $$('.delDraft').forEach(b=>b.onclick=()=>{draftItems=draftItems.filter(x=>x.id!==b.dataset.id);renderDraft()});
   $$('.editDraft').forEach(b=>b.onclick=()=>{
@@ -2906,6 +3058,81 @@ $('#saveBatchEditor').onclick=()=>{
   if(returnName && $('#wholesalerHistory') && !$('#wholesalerHistory').classList.contains('hidden')){
     showWholesalerHistory(returnName===wholesaler?wholesaler:returnName);
   }
+};
+</script>
+
+
+<div id="photoViewerModal" aria-hidden="true">
+  <div class="photo-viewer-box">
+    <button type="button" id="photoViewerClose">✕</button>
+    <div id="photoViewerTitle"></div>
+    <img id="photoViewerImg" alt="약 사진">
+    <div id="photoViewerNav">
+      <button type="button" id="photoViewerPrev">이전</button>
+      <button type="button" id="photoViewerNext">다음</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ===== v53 약 사진 보기 ===== */
+let v53PhotoList=[];
+let v53PhotoIndex=0;
+
+function v53ExtractPhotos(item){
+  const arr=[];
+  if(item && item.photo) arr.push(item.photo);
+  if(item && Array.isArray(item.countShots)){
+    item.countShots.forEach(sh=>{
+      const candidate=sh && (sh.photo||sh.data||sh.dataUrl||sh.url||sh.src||sh.image);
+      if(candidate && !arr.includes(candidate)) arr.push(candidate);
+    });
+  }
+  return arr.filter(Boolean);
+}
+function v53RenderPhoto(){
+  const modal=$('#photoViewerModal');
+  const img=$('#photoViewerImg');
+  const nav=$('#photoViewerNav');
+  if(!v53PhotoList.length){
+    modal.classList.remove('open');
+    return;
+  }
+  img.src=v53PhotoList[v53PhotoIndex];
+  nav.style.display=v53PhotoList.length>1?'flex':'none';
+}
+function openDraftPhotoViewer(item){
+  v53PhotoList=v53ExtractPhotos(item);
+  if(!v53PhotoList.length){
+    alert(item.inputMode==='ptp'?'PTP 입력 항목은 저장된 사진이 없습니다.':'저장된 사진이 없습니다.');
+    return;
+  }
+  v53PhotoIndex=0;
+  $('#photoViewerTitle').textContent=item.drug+(v53PhotoList.length>1?` · 사진 ${v53PhotoIndex+1}/${v53PhotoList.length}`:'');
+  $('#photoViewerModal').classList.add('open');
+  $('#photoViewerModal').setAttribute('aria-hidden','false');
+  v53RenderPhoto();
+}
+function v53ClosePhoto(){
+  $('#photoViewerModal').classList.remove('open');
+  $('#photoViewerModal').setAttribute('aria-hidden','true');
+  $('#photoViewerImg').src='';
+  v53PhotoList=[];
+}
+$('#photoViewerClose').onclick=v53ClosePhoto;
+$('#photoViewerModal').addEventListener('click',e=>{if(e.target.id==='photoViewerModal')v53ClosePhoto()});
+$('#photoViewerPrev').onclick=()=>{
+  if(!v53PhotoList.length)return;
+  v53PhotoIndex=(v53PhotoIndex-1+v53PhotoList.length)%v53PhotoList.length;
+  $('#photoViewerTitle').textContent=`사진 ${v53PhotoIndex+1}/${v53PhotoList.length}`;
+  v53RenderPhoto();
+};
+$('#photoViewerNext').onclick=()=>{
+  if(!v53PhotoList.length)return;
+  v53PhotoIndex=(v53PhotoIndex+1)%v53PhotoList.length;
+  $('#photoViewerTitle').textContent=`사진 ${v53PhotoIndex+1}/${v53PhotoList.length}`;
+  v53RenderPhoto();
 };
 </script>
 
