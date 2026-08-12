@@ -540,16 +540,6 @@ details summary{cursor:pointer;font-weight:800}
 </style>
 
 <style>
-#qtyMinus,#qtyPlus{display:none!important}
-</style>
-
-<style>
-#qtyMinus,#qtyPlus,
-.qtyMinus,.qtyPlus,.qty-minus,.qty-plus,
-[data-action="minus"],[data-action="plus"]{display:none!important}
-</style>
-
-<style>
 /* v46 완통반품 */
 .bottle-table-head,.bottle-row{
   display:grid;
@@ -818,7 +808,7 @@ details summary{cursor:pointer;font-weight:800}
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v49</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v51</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -878,7 +868,7 @@ details summary{cursor:pointer;font-weight:800}
     <div class="note" style="margin-top:8px">같은 약을 여러 장으로 나눠 센 경우 <b>사진을 한 번에 여러 장 선택</b>하면 각 사진의 수량을 자동으로 합산합니다.</div>
     <img id="pillEyePreview" class="preview">
     <div id="shareStatus" class="note" style="margin-top:8px"></div>
-    <div id="ocrStatus" class="hidden" class="note" style="margin-top:8px"></div>
+    <div id="ocrStatus" class="hidden note" style="margin-top:8px"></div>
   </div>
 </section>
 
@@ -990,7 +980,7 @@ details summary{cursor:pointer;font-weight:800}
     <input id="importFile" class="hidden" type="file" accept=".json,application/json">
   </div>
   <div class="note" id="backupInfo" style="margin:8px 0 10px">
-    백업파일에는 반품기록, 작성 중인 반품목록, 차감내역, 약명·약가 이력, 도매상, 최근 사용약이 모두 포함됩니다.
+    백업파일에는 낱알·PTP·완통반품의 반품기록, 작성 중 목록, 차감내역, 약명·약가 이력, 도매상 정보가 모두 포함됩니다.
   </div>
   <div class="row" style="margin-bottom:8px">
     <div class="grow note">마지막 백업: <b id="lastBackupText">없음</b></div>
@@ -1091,6 +1081,8 @@ details summary{cursor:pointer;font-weight:800}
 
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+// service-worker.js와 반드시 동일한 이름을 써야 공유받은 스크린샷을 찾을 수 있다. 버전이 올라가도 바뀌지 않는 고정 이름.
+const SHARED_IMAGE_CACHE='pill-return-shared-images';
 const BATCH='pill-return-batches-v10', MASTER='pill-return-master-v10', PRICEHIST='pill-return-price-history-v10';
 const WHOLE='pill-return-wholesalers-v10', RECENT='pill-return-recent-v10', BACKUPMETA='pill-return-backup-meta-v10', DRAFT='pill-return-draft-v30';
 const DEFAULT_WHOLESALERS=['지오영','인천약품','백제약품','훼밀리팜','대웅더샵','한미온라인팜'];
@@ -1164,7 +1156,7 @@ function addCountShot(qty,photo){
 }
 
 function uid(){return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
-function today(){return new Date().toISOString().slice(0,10)}
+function today(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 function won(v){return (Number(v)||0).toLocaleString('ko-KR',{maximumFractionDigits:2})+'원'}
 function n(v){return Number(v)||0}
 function load(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch{return f}}
@@ -1460,41 +1452,6 @@ function parsePillensText(text){
   if(qty==null && nums.length)qty=nums[nums.length-1];
   return {rawDrug,drug:known||rawDrug,known,qty,lines};
 }
-async function recognizePillens(file){
-  const status=$('#ocrStatus'),retry=$('#retryOcr');
-  retry.classList.add('hidden');
-  status.className='note ocrRun';
-  status.textContent='필렌즈 결과에서 약명과 T수를 읽는 중…';
-  if(!window.Tesseract){
-    status.className='note ocrBad';status.textContent='자동인식 엔진을 불러오지 못했습니다. 약명과 T수를 직접 입력해 주세요.';retry.classList.remove('hidden');return;
-  }
-  try{
-    const img=await imageFromFile(file),crop=cropForPillensOCR(img);
-    const result=await Tesseract.recognize(crop,'kor+eng',{
-      logger:m=>{if(m.status==='recognizing text')status.textContent=`약명·T수 읽는 중… ${Math.round((m.progress||0)*100)}%`}
-    });
-    const parsed=parsePillensText(result.data.text);
-    if(parsed.drug){
-      $('#drugName').value=parsed.drug;
-      const price=getCurrentPrice(parsed.drug);
-      if(price!=null)$('#unitPrice').value=price;
-      $('#priceHistoryNote').textContent=priceHistoryText(parsed.drug)?`약가 이력: ${priceHistoryText(parsed.drug)}`:'';
-    }
-    if(parsed.qty!=null)$('#qty').value=parsed.qty;
-    calcItem();renderExistingResults();
-    if(parsed.drug && parsed.qty!=null){
-      status.className='note ocrOk';
-      status.innerHTML=`자동인식: <b>${esc(parsed.drug)}</b> · <b>${parsed.qty}T</b>${parsed.known?' · 기존 약과 자동 매칭':''}<br><span style="font-weight:400">틀리면 아래 입력칸에서 바로 수정할 수 있습니다.</span>`;
-    }else{
-      status.className='note ocrBad';
-      status.textContent='일부만 인식했습니다. 아래 약명/T수를 확인해서 수정해 주세요.';
-    }
-    retry.classList.remove('hidden');
-  }catch(e){
-    console.error(e);
-    status.className='note ocrBad';status.textContent='자동인식에 실패했습니다. 아래 약명과 T수를 직접 입력할 수 있습니다.';retry.classList.remove('hidden');
-  }
-}
 let lastPillensFile=null;
 
 async function compressImage(file,maxW=720,quality=.72){
@@ -1585,7 +1542,7 @@ function renderDraft(){
   $('#draftItems').innerHTML=rows||'<div class="note" style="text-align:center;padding:18px">아직 추가한 약이 없습니다.</div>';
 
   $('#draftKinds').textContent=draftItems.length+'종';
-  $('#draftQty').textContent=draftItems.reduce((s,x)=>s+x.qty,0)+'T';
+  const draftQtyEl=$('#draftQty'); if(draftQtyEl) draftQtyEl.textContent=draftItems.reduce((s,x)=>s+x.qty,0)+'T';
   $('#draftTotal').textContent=won(draftItems.reduce((s,x)=>s+x.total,0));
 
   $$('.delDraft').forEach(b=>b.onclick=()=>{draftItems=draftItems.filter(x=>x.id!==b.dataset.id);renderDraft()});
@@ -1625,43 +1582,8 @@ function closeBatch(){
   renderRecords();refreshWholesalers();
 }
 
-if($('#clearSharedDebug')) $('#clearSharedDebug').onclick=async()=>{
-  try{
-    const db=await openShareDB();
-    await new Promise((resolve,reject)=>{
-      const tx=db.transaction('shares','readwrite');
-      tx.objectStore('shares').delete('latest');
-      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
-    });
-  }catch(e){}
-  if($('#shareStatus'))$('#shareStatus').textContent='누적 수량을 초기화했습니다. 필렌즈에서 다음 사진을 보내세요.';
-  $('#shareDebugMeta').classList.add('hidden');
-  $('#shareDebugMeta').textContent='';
-  $('#shareDebugImage').src='';
-  $('#shareDebugImage').style.display='none';$('#cropDebug').classList.add('hidden');$('#countCropPreview').src='';countParts=[];$('#qty').value='';calcItem();
-};
 
 
-if($('#forceUpdateBtn')){
-  $('#forceUpdateBtn').onclick=async()=>{
-    const s=$('#updateStatus');
-    try{
-      s.textContent='최신버전 확인 중…';
-      if(!('serviceWorker' in navigator)){s.textContent='서비스워커를 지원하지 않는 브라우저입니다.';return}
-      const reg=await navigator.serviceWorker.getRegistration('./');
-      if(!reg){s.textContent='서비스워커가 아직 등록되지 않았습니다. 페이지를 새로고침해 주세요.';return}
-      await reg.update();
-      if(reg.waiting){
-        s.textContent='새 버전 발견. 적용 중…';
-        reg.waiting.postMessage({type:'SKIP_WAITING'});
-      }else{
-        s.textContent='현재 최신 버전입니다. (v33)';
-      }
-    }catch(e){
-      s.textContent='업데이트 확인 실패: '+(e.message||e);
-    }
-  };
-}
 
 
 
@@ -1929,8 +1851,6 @@ $('#drugName').addEventListener('change',()=>{
 });
 $('#qty').addEventListener('input',calcItem);
 $('#unitPrice').addEventListener('input',calcItem);
-$('#minusQty').onclick=()=>{$('#qty').value=Math.max(0,n($('#qty').value)-1);calcItem()};
-$('#plusQty').onclick=()=>{$('#qty').value=n($('#qty').value)+1;calcItem()};
 $('#addItem').onclick=addItem;
 $('#newItem').onclick=()=>{
       resetCurrentItem(true);
@@ -1951,14 +1871,21 @@ function refreshBackupMeta(){
 function makeBackupPayload(){
   return {
     app:'낱알반품 관리',
-    version:10,
+    version:51,
     exportedAt:new Date().toISOString(),
+
+    // 낱알/PTP
     batches:load(BATCH,[]),
     master:load(MASTER,{}),
     priceHistory:load(PRICEHIST,{}),
     wholesalers:load(WHOLE,[]),
     recent:load(RECENT,[]),
-    draft:load(DRAFT,[])
+    draft:load(DRAFT,[]),
+
+    // 완통반품
+    bottleDraft:load('pill-return-bottle-draft-v46',[]),
+    bottleMaster:load('pill-return-bottle-master-v46',{}),
+    bottleBatches:load('pill-return-bottle-batches-v46',[])
   };
 }
 function downloadBackup(){
@@ -1989,7 +1916,13 @@ $('#importFile').onchange=async e=>{
     store(WHOLE,d.wholesalers||[]);
     store(RECENT,d.recent||[]);
     draftItems=Array.isArray(d.draft)?d.draft:[];saveDraft();
-    refreshMaster();refreshWholesalers();renderRecords();resetCurrentItem();
+
+    // v51: 완통반품 데이터도 함께 복원
+    store('pill-return-bottle-draft-v46',Array.isArray(d.bottleDraft)?d.bottleDraft:[]);
+    store('pill-return-bottle-master-v46',d.bottleMaster||{});
+    store('pill-return-bottle-batches-v46',Array.isArray(d.bottleBatches)?d.bottleBatches:[]);
+
+    refreshMaster();refreshWholesalers();renderDraft();renderRecords();resetCurrentItem();
     alert('백업 복원이 완료되었습니다.');
   }catch(err){
     alert('올바른 낱알반품 백업파일이 아닙니다.\n'+(err.message||''));
@@ -2160,65 +2093,84 @@ async function loadSharedImage(){
   const status=document.querySelector('#shareStatus');
   try{
     const params=new URLSearchParams(location.search);
-    const shareId=params.get('share');
-    if(!shareId)return;
+    // service-worker.js는 './?shared=key1|key2|...' 형태로 리다이렉트한다(복수형 'shared').
+    const sharedParam=params.get('shared')||params.get('share');
+    if(!sharedParam)return;
+
+    const keys=sharedParam.split('|').map(s=>decodeURIComponent(s)).filter(Boolean);
+    if(!keys.length)return;
 
     if(status)status.textContent='스크린샷 불러오는 중…';
 
-    const cache=await caches.open('pill-return-shares');
-    const candidates=[
-      './shared/'+shareId,
-      new URL('./shared/'+shareId, location.href).pathname,
-      '/pill-return/shared/'+shareId
-    ];
+    // service-worker.js가 공유 이미지를 저장하는 캐시와 반드시 같은 이름을 써야 한다.
+    const cache=await caches.open(SHARED_IMAGE_CACHE);
 
-    let res=null;
-    for(const key of candidates){
-      try{
-        const r=await cache.match(key);
-        if(r){res=r;break;}
-      }catch(e){}
-    }
-    if(!res){
-      // cache 전체를 훑어 share id가 들어간 항목을 찾는다.
-      const keys=await cache.keys();
-      for(const req of keys){
-        if(req.url.includes(shareId)){
-          res=await cache.match(req);
-          if(res)break;
-        }
+    const blobs=[];
+    for(const key of keys){
+      let res=null;
+      try{res=await cache.match(key);}catch(e){}
+      if(!res){
+        // 정확히 일치하지 않으면 캐시 전체를 훑어 유사한 키를 찾는다.
+        try{
+          const allKeys=await cache.keys();
+          for(const req of allKeys){
+            if(req.url===key || (key && req.url.endsWith(key.split('/').pop()))){
+              res=await cache.match(req);
+              if(res)break;
+            }
+          }
+        }catch(e){}
+      }
+      if(res){
+        const blob=await res.blob();
+        if(blob && blob.size)blobs.push(blob);
       }
     }
-    if(!res)throw new Error('공유된 스크린샷 파일을 찾지 못했습니다.');
 
-    const blob=await res.blob();
-    if(!blob || !blob.size)throw new Error('공유된 스크린샷이 비어 있습니다.');
+    if(!blobs.length)throw new Error('공유된 스크린샷 파일을 찾지 못했습니다.');
 
-    // 앱 내부 사진 선택과 동일하게 원본 미리보기를 먼저 표시.
-    const photo=await compressImage(blob,720,.72);
-    currentPhotoData=photo;
+    // 앱 내부 다중 사진 선택과 동일한 방식으로 새 계수 묶음을 시작하고 순서대로 합산한다.
+    countShots=[];
+    countParts=[];
+    currentPhotoData='';
+    renderCountShots();
+    syncShotTotal();
+
+    // 앱 내부 사진 선택과 동일하게 첫 장의 원본 미리보기를 먼저 표시.
+    const firstPhoto=await compressImage(blobs[0],720,.72);
+    currentPhotoData=firstPhoto;
     const preview=document.querySelector('#pillEyePreview');
     if(preview){
-      preview.src=photo;
+      preview.src=firstPhoto;
       preview.style.display='block';
     }
 
-    // 공유로 들어온 한 장은 기본적으로 새 계수로 시작.
-    appendShotMode=false;
     if(status)status.textContent='스크린샷 수신 완료. 숫자 읽는 중…';
-    await recognizePillensCount(blob,false);
+    for(let i=0;i<blobs.length;i++){
+      if(status)status.textContent=`공유 사진 ${i+1}/${blobs.length} 읽는 중…`;
+      const result=await recognizePillensCount(blobs[i],i>0);
+      if(result && result.qty==null){
+        if(status)status.innerHTML=`<b style="color:#ad3c3c">${i+1}번째 공유 사진 숫자 인식 실패</b><br>앞에서 읽은 사진은 유지됩니다.`;
+        break;
+      }
+    }
+
+    const total=countShots.reduce((s,x)=>s+(Number(x.qty)||0),0);
+    if(status && countShots.length){
+      status.innerHTML=countShots.length>1
+        ? `<b style="color:#087d63">${countShots.map(x=>x.qty).join(' + ')} = ${total}T</b><br><span class="note">공유 사진 ${countShots.length}장 합산 완료</span>`
+        : `<b style="color:#087d63">${total}T 인식</b><br><span class="note">공유 스크린샷에서 불러왔습니다.</span>`;
+    }
 
     // 사용한 임시 공유파일 정리.
     try{
-      const keys=await cache.keys();
-      for(const req of keys){
-        if(req.url.includes(shareId))await cache.delete(req);
-      }
+      for(const key of keys){await cache.delete(key);}
     }catch(e){}
 
     // 재실행 시 같은 공유파일을 다시 읽지 않게 주소 정리.
     try{
       const clean=new URL(location.href);
+      clean.searchParams.delete('shared');
       clean.searchParams.delete('share');
       history.replaceState(null,'',clean.pathname+clean.search);
     }catch(e){}
@@ -2298,7 +2250,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   const jload=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}};
   const jstore=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
   const kwon=v=>new Intl.NumberFormat('ko-KR').format(Number(v)||0)+'원';
-  const ktoday=()=>new Date().toISOString().slice(0,10);
+  const ktoday=()=>{const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;};
 
   let bottleDraft=jload(BOTTLE_DRAFT,[]);
 
@@ -2413,6 +2365,15 @@ window.addEventListener('DOMContentLoaded',()=>{
       total:bottleDraft.reduce((a,x)=>a+x.total,0)
     });
     jstore(BOTTLE_BATCH,batches);
+
+    // 완통반품에서 새로 입력한 도매상도 공용 도매상 목록에 저장
+    const wholeList=jload(WHOLE_KEY,[]);
+    if(!wholeList.includes(wholesaler)){
+      wholeList.push(wholesaler);
+      jstore(WHOLE_KEY,wholeList);
+      refreshBottleWholesalers();
+    }
+
     bottleDraft=[];
     renderBottleDraft();
     renderBottleHistory();
@@ -2460,25 +2421,6 @@ window.addEventListener('DOMContentLoaded',()=>{
 })();
 </script>
 
-
-<style>
-/* v48: 낱알반품 요약에서는 전체 낱알 총수량을 표시하지 않음 */
-#draftQty{display:none!important}
-#draftQtyCard{display:none!important}
-</style>
-<script>
-window.addEventListener('DOMContentLoaded',()=>{
-  const q=document.getElementById('draftQty');
-  if(q){
-    let box=q;
-    for(let i=0;i<3 && box.parentElement;i++){
-      if(/총\s*수량/.test(box.parentElement.textContent||'')){box=box.parentElement;break;}
-      box=box.parentElement;
-    }
-    if(box && /총\s*수량/.test(box.textContent||'')) box.style.display='none';
-  }
-});
-</script>
 
 </body>
 </html>

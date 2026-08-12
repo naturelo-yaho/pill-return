@@ -1,5 +1,11 @@
 
-const CACHE_NAME = 'pill-return-v49';
+const CACHE_NAME = 'pill-return-v51';
+// index.html과 반드시 동일한 이름을 써야 공유받은 스크린샷을 앱이 찾을 수 있다. 버전이 올라가도 바뀌지 않는 고정 이름.
+const SHARED_IMAGE_CACHE = 'pill-return-shared-images';
+
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
 const APP_SHELL = [
   './',
   './index.html',
@@ -16,7 +22,8 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async()=>{
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
+    // 앱 셸 캐시는 새 버전 것만 남기고, 공유 이미지 캐시는 버전이 바뀌어도 지우지 않는다(공유 직후 앱 업데이트가 겹치면 사진이 사라지는 것을 방지).
+    await Promise.all(keys.filter(k => k !== CACHE_NAME && k !== SHARED_IMAGE_CACHE).map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
@@ -29,7 +36,7 @@ self.addEventListener('fetch', event => {
     event.respondWith((async()=>{
       const form = await req.formData();
       const files = form.getAll('files').filter(x => x && x.type && x.type.startsWith('image/'));
-      const cache = await caches.open('pill-return-share-v49');
+      const cache = await caches.open(SHARED_IMAGE_CACHE);
 
       const keys = [];
       for (let i=0;i<files.length;i++){
