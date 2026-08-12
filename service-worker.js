@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pill-return-v70';
+const CACHE_NAME = 'pill-return-v71';
 const SHARED_IMAGE_CACHE = 'pill-return-shared-images';
 const APP_SHELL = ['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 

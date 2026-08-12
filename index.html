@@ -924,7 +924,7 @@ details summary{cursor:pointer;font-weight:800}
 }
 
 /* 이미 보낸 반품 수정 모달 */
-#batchEditModal{
+#batchEditModal,#bottleBatchEditModal{
   position:fixed;
   inset:0;
   z-index:9999;
@@ -933,7 +933,7 @@ details summary{cursor:pointer;font-weight:800}
   justify-content:center;
   background:rgba(0,0,0,.38);
 }
-#batchEditModal.open{display:flex}
+#batchEditModal.open,#bottleBatchEditModal.open{display:flex}
 .v52-modal-sheet{
   width:min(720px,100%);
   max-height:90vh;
@@ -2385,7 +2385,7 @@ main,
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v70</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v71</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -2623,6 +2623,7 @@ main,
         <label>도매상</label>
         <input id="bottleWholesaler" list="bottleWholesalers" placeholder="도매상">
         <datalist id="bottleWholesalers"></datalist>
+        <div id="bottleWholeChips" class="chips"></div>
       </div>
     </div>
     <div class="totalBox" style="margin-top:12px">
@@ -3842,6 +3843,13 @@ window.addEventListener('DOMContentLoaded',()=>{
     const arr=jload(WHOLE_KEY,[]);
     const dl=document.getElementById('bottleWholesalers');
     if(dl)dl.innerHTML=arr.map(x=>`<option value="${String(x).replace(/"/g,'&quot;')}"></option>`).join('');
+    const chips=document.getElementById('bottleWholeChips');
+    if(chips){
+      chips.innerHTML=arr.map(x=>`<button type="button" class="chip bottleWholePick" data-name="${String(x).replace(/"/g,'&quot;')}">${x}</button>`).join('');
+      chips.querySelectorAll('.bottleWholePick').forEach(b=>b.onclick=()=>{
+        document.getElementById('bottleWholesaler').value=b.dataset.name;
+      });
+    }
   }
 
   function bottleItemCalc(){
@@ -3919,11 +3927,17 @@ window.addEventListener('DOMContentLoaded',()=>{
             ${b.items.map(x=>`<div style="display:grid;grid-template-columns:minmax(90px,1fr) 70px 46px 80px;gap:6px;padding:8px 0;border-bottom:1px solid #edf1ef;font-size:12px">
               <b>${x.drug}</b><span style="text-align:right">${kwon(x.unitPrice)}/통</span><span style="text-align:right">${x.qty}통</span><b style="text-align:right">${kwon(x.total)}</b>
             </div>`).join('')}
+            <button type="button" class="secondary bottleBatchEdit" data-id="${b.id}" style="margin-top:10px">수정</button>
             <button type="button" class="danger bottleBatchDelete" data-id="${b.id}" style="margin-top:10px">기록 삭제</button>
           </div>
         </div>`).join('')}`;
     document.querySelectorAll('.bottleHistoryToggle').forEach(x=>x.onclick=()=>x.parentElement.classList.toggle('open'));
-    document.querySelectorAll('.bottleBatchDelete').forEach(btn=>btn.onclick=()=>{
+    document.querySelectorAll('.bottleBatchEdit').forEach(btn=>btn.onclick=(e)=>{
+      e.stopPropagation();
+      openBottleBatchEditor(btn.dataset.id);
+    });
+    document.querySelectorAll('.bottleBatchDelete').forEach(btn=>btn.onclick=(e)=>{
+      e.stopPropagation();
       if(!confirm('이 완통반품 기록을 삭제할까요?'))return;
       jstore(BOTTLE_BATCH,jload(BOTTLE_BATCH,[]).filter(x=>x.id!==btn.dataset.id));
       renderBottleHistory();
@@ -3957,6 +3971,96 @@ window.addEventListener('DOMContentLoaded',()=>{
     renderBottleHistory();
     document.getElementById('bottleWholesaler').value='';
     alert('완통반품이 별도 기록으로 마감되었습니다.');
+  }
+
+  // ===== v71 완통반품 기록 수정 =====
+  let bottleEditBatchId=null;
+
+  function bottleEscAttr(v){
+    return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function recalcBottleEditor(){
+    const rows=[...document.querySelectorAll('#editBottleItems .v52-editor-row')];
+    let total=0;
+    rows.forEach(row=>{
+      const qty=Number(row.querySelector('.eQty').value||0);
+      const unit=Number(row.querySelector('.eUnit').value||0);
+      const amount=qty*unit;
+      row.querySelector('.eAmount').textContent=kwon(amount);
+      total+=amount;
+    });
+    document.getElementById('editBottleTotal').textContent=kwon(total);
+  }
+
+  function renderBottleEditItems(items){
+    const wrap=document.getElementById('editBottleItems');
+    wrap.innerHTML=(items||[]).map(x=>`
+      <div class="v52-editor-row">
+        <input class="eDrug" value="${bottleEscAttr(x.drug)}" aria-label="약명">
+        <input class="eQty" type="number" min="0" inputmode="numeric" value="${Number(x.qty)||0}" aria-label="수량">
+        <input class="eUnit" type="number" min="0" inputmode="numeric" value="${Number(x.unitPrice)||0}" aria-label="통당 금액">
+        <b class="eAmount">${kwon((Number(x.qty)||0)*(Number(x.unitPrice)||0))}</b>
+        <button type="button" class="danger removeEditItem">삭제</button>
+      </div>`).join('');
+    wrap.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',recalcBottleEditor));
+    wrap.querySelectorAll('.removeEditItem').forEach(btn=>btn.onclick=()=>{
+      btn.closest('.v52-editor-row').remove();
+      recalcBottleEditor();
+    });
+    recalcBottleEditor();
+  }
+
+  function openBottleBatchEditor(id){
+    const b=jload(BOTTLE_BATCH,[]).find(x=>x.id===id);
+    if(!b)return;
+    bottleEditBatchId=id;
+    document.getElementById('editBottleDate').value=b.date||ktoday();
+    document.getElementById('editBottleWholesaler').value=b.wholesaler||'';
+    renderBottleEditItems(JSON.parse(JSON.stringify(b.items||[])));
+    document.getElementById('bottleBatchEditModal').classList.add('open');
+    document.getElementById('bottleBatchEditModal').setAttribute('aria-hidden','false');
+  }
+
+  function closeBottleBatchEditor(){
+    document.getElementById('bottleBatchEditModal').classList.remove('open');
+    document.getElementById('bottleBatchEditModal').setAttribute('aria-hidden','true');
+    bottleEditBatchId=null;
+  }
+
+  function saveBottleBatchEditor(){
+    const all=jload(BOTTLE_BATCH,[]);
+    const b=all.find(x=>x.id===bottleEditBatchId);
+    if(!b)return;
+
+    const date=document.getElementById('editBottleDate').value;
+    const wholesaler=document.getElementById('editBottleWholesaler').value.trim();
+    if(!date||!wholesaler){alert('날짜와 도매상을 입력해 주세요.');return}
+
+    const items=[...document.querySelectorAll('#editBottleItems .v52-editor-row')].map(row=>{
+      const drug=row.querySelector('.eDrug').value.trim();
+      const qty=Number(row.querySelector('.eQty').value||0);
+      const unitPrice=Number(row.querySelector('.eUnit').value||0);
+      return {drug,qty,unitPrice,total:qty*unitPrice};
+    }).filter(x=>x.drug && x.qty>0);
+
+    if(!items.length){alert('완통반품 약을 1개 이상 남겨 주세요.');return}
+
+    b.date=date;
+    b.wholesaler=wholesaler;
+    b.items=items;
+    b.total=items.reduce((sum,x)=>sum+x.total,0);
+    jstore(BOTTLE_BATCH,all);
+
+    const wholeList=jload(WHOLE_KEY,[]);
+    if(!wholeList.includes(wholesaler)){
+      wholeList.push(wholesaler);
+      jstore(WHOLE_KEY,wholeList);
+    }
+    refreshBottleWholesalers();
+
+    closeBottleBatchEditor();
+    renderBottleHistory();
   }
 
   function setMainReturnMode(mode){
@@ -3994,10 +4098,63 @@ window.addEventListener('DOMContentLoaded',()=>{
     renderBottleDraft();
     renderBottleHistory();
 
+    document.getElementById('closeBottleBatchEditor').onclick=closeBottleBatchEditor;
+    document.getElementById('cancelBottleBatchEditor').onclick=closeBottleBatchEditor;
+    document.getElementById('saveBottleBatchEditor').onclick=saveBottleBatchEditor;
+    document.getElementById('bottleBatchEditModal').addEventListener('click',e=>{
+      if(e.target.id==='bottleBatchEditModal')closeBottleBatchEditor();
+    });
+    document.getElementById('addEditBottleItem').onclick=()=>{
+      const wrap=document.getElementById('editBottleItems');
+      wrap.insertAdjacentHTML('beforeend',`
+        <div class="v52-editor-row">
+          <input class="eDrug" placeholder="약명">
+          <input class="eQty" type="number" min="0" inputmode="numeric" value="0">
+          <input class="eUnit" type="number" min="0" inputmode="numeric" value="0">
+          <b class="eAmount">0원</b>
+          <button type="button" class="danger removeEditItem">삭제</button>
+        </div>`);
+      const row=wrap.lastElementChild;
+      row.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',recalcBottleEditor));
+      row.querySelector('.removeEditItem').onclick=()=>{row.remove();recalcBottleEditor()};
+      row.querySelector('.eDrug').focus();
+    };
+
     setMainReturnMode(localStorage.getItem('pill-return-main-return-mode-v46')||'loose');
   });
 })();
 </script>
+
+
+
+<div id="bottleBatchEditModal" aria-hidden="true">
+  <div class="v52-modal-sheet">
+    <div class="v52-modal-head">
+      <h2>완통반품 기록 수정</h2>
+      <button type="button" class="v52-modal-close" id="closeBottleBatchEditor">✕</button>
+    </div>
+
+    <div class="v52-edit-meta">
+      <div><label>보낸 날짜</label><input type="date" id="editBottleDate"></div>
+      <div><label>도매상</label><input id="editBottleWholesaler" list="bottleWholesalers"></div>
+    </div>
+
+    <div class="v52-editor-card">
+      <b>완통반품 약 목록</b>
+      <div class="v52-editor-head">
+        <span>약명</span><span>통 수</span><span>통당 금액</span><span>금액</span><span></span>
+      </div>
+      <div id="editBottleItems"></div>
+      <button type="button" class="secondary" id="addEditBottleItem" style="width:100%;margin-top:8px">+ 약 추가</button>
+      <div class="v52-edit-total"><span>총 반품금액</span><b id="editBottleTotal">0원</b></div>
+    </div>
+
+    <div class="v52-modal-actions">
+      <button type="button" class="primary" id="saveBottleBatchEditor">수정 저장</button>
+      <button type="button" class="secondary" id="cancelBottleBatchEditor">취소</button>
+    </div>
+  </div>
+</div>
 
 
 
