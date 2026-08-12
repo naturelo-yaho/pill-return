@@ -1107,11 +1107,11 @@ details summary{cursor:pointer;font-weight:800}
 
 /* 도매상별 반품내역: 제목-도매상명 크기 계층 통일 */
 #wholesalerCard > .row > h2{
-  font-size:21px !important;
+  font-size:17px !important;
   line-height:1.2 !important;
 }
 #wholesalerHistory h3{
-  font-size:21px !important;
+  font-size:17px !important;
   line-height:1.2 !important;
   font-weight:900 !important;
 }
@@ -1227,7 +1227,7 @@ details summary{cursor:pointer;font-weight:800}
 #historyList .histTop *,
 #historyList .histDetail h3,
 #historyList .histDetail h3 *{
-  font-size:21px !important;
+  font-size:17px !important;
   line-height:1.25 !important;
   font-weight:900 !important;
 }
@@ -1240,7 +1240,7 @@ details summary{cursor:pointer;font-weight:800}
 .v41-history-row .v41-whole,
 .v41-history-row .v41-money,
 .v41-detail-title b{
-  font-size:21px !important;
+  font-size:17px !important;
   line-height:1.25 !important;
   font-weight:900 !important;
 }
@@ -1249,7 +1249,82 @@ details summary{cursor:pointer;font-weight:800}
   .v41-history-row .v41-whole,
   .v41-history-row .v41-money,
   .v41-detail-title b{
-    font-size:21px !important;
+    font-size:17px !important;
+  }
+}
+</style>
+
+
+<style>
+/* ===== v57 실제 모바일 폭 기준 재조정 ===== */
+
+/* 1) 오늘 반품할 약: 수정/삭제가 카드 안에 100% 들어오도록 폭 재배치 */
+#draftItems .v52-draft-row{
+  grid-template-columns:22px minmax(72px,1fr) 32px 46px 58px 70px !important;
+  gap:3px !important;
+  padding:8px 6px !important;
+  box-sizing:border-box !important;
+  width:100% !important;
+}
+.v52-draft-actions{
+  width:70px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:4px !important;
+}
+.v52-draft-actions button{
+  width:100% !important;
+  min-width:0 !important;
+  padding:6px 2px !important;
+  font-size:10px !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+.v52-draft-name b{font-size:13px !important}
+.v52-draft-name small{font-size:10px !important}
+.v52-draft-num,.v52-draft-price,.v52-draft-total{
+  font-size:11px !important;
+  white-space:nowrap !important;
+}
+
+/* 2) 반품/차감 목록: 접힌 행과 펼친 제목을 같은 '중간 크기'로 통일
+      17px 강제 규칙을 이 규칙으로 최종 덮어씀 */
+.v41-history-row{
+  grid-template-columns:78px minmax(50px,1fr) 70px 70px !important;
+  column-gap:4px !important;
+  padding-left:8px !important;
+  padding-right:8px !important;
+}
+.v41-history-row .v41-date,
+.v41-history-row .v41-whole,
+.v41-history-row .v41-money,
+.v41-detail-title b{
+  font-size:14px !important;
+  line-height:1.25 !important;
+  font-weight:800 !important;
+}
+.v41-history-row .v41-date,
+.v41-history-row .v41-whole,
+.v41-history-row .v41-money{
+  white-space:nowrap !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+.v41-history-row .v41-money{
+  text-align:right !important;
+}
+
+/* 너무 좁은 화면에서도 말줄임표 대신 실제 숫자를 우선 표시 */
+@media(max-width:380px){
+  .v41-history-row{
+    grid-template-columns:76px 52px 68px 68px !important;
+    column-gap:3px !important;
+  }
+  .v41-history-row .v41-date,
+  .v41-history-row .v41-whole,
+  .v41-history-row .v41-money,
+  .v41-detail-title b{
+    font-size:13px !important;
   }
 }
 </style>
@@ -1257,7 +1332,7 @@ details summary{cursor:pointer;font-weight:800}
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v55</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v57</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
