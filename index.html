@@ -1711,10 +1711,102 @@ main,
 }
 </style>
 
+
+<style>
+/* ===== v63 약명 가독성 + 행 정렬 ===== */
+/* 약명에 더 많은 폭을 주고, 오른쪽 정보는 고정 폭 유지 */
+#draftItems .v52-draft-row{
+  display:grid !important;
+  grid-template-columns:24px minmax(120px,1.65fr) 42px 70px 82px 94px !important;
+  column-gap:5px !important;
+  align-items:center !important;
+  min-height:74px !important;
+  padding:8px 8px !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+#draftItems .v52-draft-row > *{
+  min-width:0 !important;
+  align-self:center !important;
+}
+
+/* 약명: 최대 2줄까지 보이고 그 이후만 말줄임 */
+#draftItems .v52-draft-name{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  min-width:0 !important;
+  min-height:54px !important;
+  overflow:visible !important;
+}
+#draftItems .v52-draft-name b{
+  display:-webkit-box !important;
+  -webkit-box-orient:vertical !important;
+  -webkit-line-clamp:2 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:normal !important;
+  word-break:keep-all !important;
+  overflow-wrap:anywhere !important;
+  line-height:1.18 !important;
+  max-height:2.36em !important;
+  margin:0 !important;
+}
+#draftItems .v52-draft-name small{
+  display:block !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  margin-top:3px !important;
+  line-height:1.1 !important;
+}
+
+/* 숫자/금액/버튼은 어느 행에서도 같은 세로선 */
+#draftItems .v52-draft-num,
+#draftItems .v52-draft-price,
+#draftItems .v52-draft-total{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  height:100% !important;
+  white-space:nowrap !important;
+  line-height:1.15 !important;
+}
+#draftItems .v52-draft-actions{
+  width:94px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:4px !important;
+  align-items:center !important;
+}
+#draftItems .v52-draft-actions button{
+  width:100% !important;
+  min-width:0 !important;
+  margin:0 !important;
+  padding:8px 2px !important;
+}
+
+/* 좁은 갤럭시 화면: 버튼/숫자를 조금 압축하고 약명 폭을 최대한 확보 */
+@media(max-width:480px){
+  #draftItems .v52-draft-row{
+    grid-template-columns:22px minmax(105px,1.75fr) 38px 62px 72px 78px !important;
+    column-gap:4px !important;
+    padding:8px 6px !important;
+  }
+  #draftItems .v52-draft-actions{
+    width:78px !important;
+    gap:3px !important;
+  }
+  #draftItems .v52-draft-actions button{
+    padding:7px 1px !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v62</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v63</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
