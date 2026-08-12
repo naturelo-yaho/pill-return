@@ -2382,10 +2382,31 @@ main,
 }
 </style>
 
+
+<style>
+/* v68 도매상 관리 패널 */
+#wholesalerManager{
+  background:#f4f9fd;
+  border:1px solid #d7e8f2;
+  border-radius:14px;
+  padding:12px !important;
+}
+#wholesalerManager .row{
+  gap:8px;
+}
+#wholesalerManageList .row{
+  min-height:46px;
+  align-items:center;
+}
+#wholesalerManageList .deleteWh{
+  min-width:58px;
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v67</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v68</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -2523,7 +2544,7 @@ main,
   </div>
   <div id="wholesalerButtons" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div>
   <div id="wholesalerHistory" class="hidden" style="margin-top:12px"></div>
-  <div id="wholesalerManager" class="hidden" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+  <div id="wholesalerManager" class="hidden" data-open="0" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
     <div class="row">
       <input id="newWholesaler" placeholder="새 도매상 이름" style="flex:1">
       <button type="button" class="primary" id="addWholesaler">추가</button>
@@ -3252,8 +3273,20 @@ applyInputMode();
 
 if($('#toggleWhManage'))$('#toggleWhManage').onclick=()=>{
   const m=$('#wholesalerManager');
-  m.classList.toggle('hidden');
-  refreshWholesalers();
+  if(!m)return;
+  const isOpen=m.dataset.open==='1';
+  if(isOpen){
+    m.dataset.open='0';
+    m.style.display='none';
+    $('#toggleWhManage').textContent='도매상 관리';
+  }else{
+    m.dataset.open='1';
+    m.classList.remove('hidden');
+    m.style.display='block';
+    refreshWholesalers();
+    $('#toggleWhManage').textContent='관리 닫기';
+    setTimeout(()=>m.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+  }
 };
 if($('#addWholesaler'))$('#addWholesaler').onclick=()=>{
   const inp=$('#newWholesaler');
