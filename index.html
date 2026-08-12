@@ -1233,10 +1233,31 @@ details summary{cursor:pointer;font-weight:800}
 }
 </style>
 
+
+<style>
+/* v55: 실제 반품/차감 내역 클래스에 적용 */
+.v41-history-row .v41-date,
+.v41-history-row .v41-whole,
+.v41-history-row .v41-money,
+.v41-detail-title b{
+  font-size:21px !important;
+  line-height:1.25 !important;
+  font-weight:900 !important;
+}
+@media(max-width:380px){
+  .v41-history-row .v41-date,
+  .v41-history-row .v41-whole,
+  .v41-history-row .v41-money,
+  .v41-detail-title b{
+    font-size:21px !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v54</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v55</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 

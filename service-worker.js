@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'pill-return-v54';
+const CACHE_NAME = 'pill-return-v55';
 // index.html과 반드시 동일한 이름을 써야 공유받은 스크린샷을 앱이 찾을 수 있다. 버전이 올라가도 바뀌지 않는 고정 이름.
 const SHARED_IMAGE_CACHE = 'pill-return-shared-images';
 
