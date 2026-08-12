@@ -1607,10 +1607,114 @@ main,
 }
 </style>
 
+
+<style>
+/* ===== v62 행/열 정렬 보정 ===== */
+
+/* 1. 반품/차감 상세: 헤더와 모든 약 행이 완전히 같은 열을 사용 */
+.v41-items-head,
+.v41-item-row{
+  display:grid !important;
+  grid-template-columns:minmax(0,1.55fr) 56px 82px 92px !important;
+  column-gap:8px !important;
+  align-items:center !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+  padding-left:10px !important;
+  padding-right:10px !important;
+}
+.v41-items-head > *,
+.v41-item-row > *{
+  min-width:0 !important;
+  margin:0 !important;
+  box-sizing:border-box !important;
+}
+.v41-items-head > :nth-child(1),
+.v41-item-row > :nth-child(1){text-align:left !important;}
+.v41-items-head > :nth-child(n+2),
+.v41-item-row > :nth-child(n+2){text-align:right !important;}
+.v41-item-row{
+  min-height:56px !important;
+}
+.v41-item-row .drug,
+.v41-item-row .qty,
+.v41-item-row .unit,
+.v41-item-row .amount{
+  line-height:1.2 !important;
+}
+
+/* 2. 오늘 반품할 약: 모든 행의 숫자/금액/버튼 중심선을 동일하게 고정 */
+#draftItems .v52-draft-row{
+  display:grid !important;
+  grid-template-columns:26px minmax(0,1fr) 52px 76px 88px 100px !important;
+  column-gap:6px !important;
+  align-items:center !important;
+  min-height:66px !important;
+  padding:8px 10px !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+#draftItems .v52-draft-row > *{
+  min-width:0 !important;
+  margin-top:0 !important;
+  margin-bottom:0 !important;
+  align-self:center !important;
+}
+.v52-draft-name{
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  min-height:48px !important;
+}
+.v52-draft-name b,
+.v52-draft-name small{
+  margin:0 !important;
+}
+.v52-draft-num,
+.v52-draft-price,
+.v52-draft-total{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  height:100% !important;
+  line-height:1.15 !important;
+}
+.v52-draft-actions{
+  width:100px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:5px !important;
+  align-items:center !important;
+}
+.v52-draft-actions button{
+  width:100% !important;
+  min-width:0 !important;
+  margin:0 !important;
+  padding:7px 3px !important;
+}
+
+/* 모바일 실제 폭에서도 같은 세로선 유지 */
+@media(max-width:480px){
+  .v41-items-head,
+  .v41-item-row{
+    grid-template-columns:minmax(0,1.35fr) 46px 68px 78px !important;
+    column-gap:5px !important;
+    padding-left:7px !important;
+    padding-right:7px !important;
+  }
+  #draftItems .v52-draft-row{
+    grid-template-columns:24px minmax(0,1fr) 40px 62px 70px 78px !important;
+    column-gap:4px !important;
+    padding:8px 7px !important;
+  }
+  .v52-draft-actions{width:78px !important;gap:4px !important;}
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v61</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v62</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
