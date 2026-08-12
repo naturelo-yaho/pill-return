@@ -805,10 +805,278 @@ details summary{cursor:pointer;font-weight:800}
 }
 </style>
 
+
+<style>
+/* ===== v52 compact rows + sent-return editor ===== */
+
+/* 오늘 반품할 약: 약 1개 = 한 줄 */
+#draftItems{
+  margin-top:12px !important;
+  border:1px solid var(--line);
+  border-radius:16px;
+  overflow:hidden;
+  background:#fff;
+}
+#draftItems .v52-draft-row{
+  display:grid;
+  grid-template-columns:26px minmax(88px,1.5fr) 48px 66px 76px 82px;
+  gap:6px;
+  align-items:center;
+  min-height:54px;
+  padding:9px 10px;
+  box-sizing:border-box;
+  border-bottom:1px solid var(--line);
+}
+#draftItems .v52-draft-row:last-child{border-bottom:0}
+.v52-draft-row .badge{margin:0!important}
+.v52-draft-name{
+  min-width:0;
+  overflow:hidden;
+}
+.v52-draft-name b{
+  display:block;
+  font-size:15px;
+  line-height:1.15;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.v52-draft-name small{
+  display:block;
+  margin-top:3px;
+  font-size:11px;
+  color:var(--muted);
+  white-space:nowrap;
+}
+.v52-draft-num,
+.v52-draft-price,
+.v52-draft-total{
+  text-align:right;
+  white-space:nowrap;
+  font-size:13px;
+}
+.v52-draft-total{font-weight:800}
+.v52-draft-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:4px;
+}
+.v52-draft-actions button{
+  min-height:34px!important;
+  padding:6px 8px!important;
+  border-radius:10px!important;
+  font-size:12px!important;
+}
+
+/* 요약은 품목 수 + 총 금액 두 칸 */
+#draftItems + .summary{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+
+/* 도매상별 반품내역 타이포 계층 */
+#wholesalerCard > .row > h2{
+  font-size:22px!important;
+  font-weight:900!important;
+  line-height:1.2!important;
+}
+#toggleWhManage{
+  font-size:15px!important;
+  font-weight:800!important;
+}
+#wholesalerButtons .whBtn{
+  font-size:15px!important;
+  font-weight:800!important;
+  padding:10px 14px!important;
+}
+#wholesalerHistory h3{
+  font-size:19px!important;
+  font-weight:900!important;
+}
+#wholesalerHistory .note{
+  font-size:13px!important;
+}
+
+/* 도매상별 내역: 날짜별 한 줄 */
+.v52-wh-head,.v52-wh-row{
+  display:grid;
+  grid-template-columns:94px 72px 88px 88px 52px;
+  gap:6px;
+  align-items:center;
+}
+.v52-wh-head{
+  padding:8px 9px;
+  background:#f2f6f4;
+  border-radius:10px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:800;
+}
+.v52-wh-row{
+  padding:10px 9px;
+  border-bottom:1px solid var(--line);
+  font-size:13px;
+}
+.v52-wh-row > :nth-child(n+2){text-align:right}
+.v52-wh-row button{
+  min-height:34px!important;
+  padding:6px 8px!important;
+  font-size:12px!important;
+}
+
+/* 이미 보낸 반품 수정 모달 */
+#batchEditModal{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  background:rgba(0,0,0,.38);
+}
+#batchEditModal.open{display:flex}
+.v52-modal-sheet{
+  width:min(720px,100%);
+  max-height:90vh;
+  overflow:auto;
+  background:#f7faf9;
+  border-radius:22px 22px 0 0;
+  padding:18px;
+  box-sizing:border-box;
+  box-shadow:0 -8px 30px rgba(0,0,0,.12);
+}
+.v52-modal-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:14px;
+}
+.v52-modal-head h2{
+  flex:1;
+  margin:0!important;
+  font-size:21px!important;
+}
+.v52-modal-close{
+  border:0!important;
+  background:#edf2f0!important;
+  min-width:42px!important;
+  height:42px!important;
+  border-radius:50%!important;
+  padding:0!important;
+}
+.v52-edit-meta{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+.v52-editor-card{
+  margin-top:12px;
+  padding:12px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:14px;
+}
+.v52-editor-head,.v52-editor-row{
+  display:grid;
+  grid-template-columns:minmax(90px,1.45fr) 58px 74px 80px 44px;
+  gap:6px;
+  align-items:center;
+}
+.v52-editor-head{
+  padding:7px 5px;
+  font-size:10px;
+  color:var(--muted);
+  font-weight:800;
+}
+.v52-editor-head > :nth-child(n+2){text-align:right}
+.v52-editor-row{
+  padding:7px 0;
+  border-top:1px solid #edf1ef;
+}
+.v52-editor-row input{
+  width:100%!important;
+  min-width:0!important;
+  height:42px!important;
+  min-height:42px!important;
+  padding:0 8px!important;
+  font-size:13px!important;
+  border-radius:10px!important;
+}
+.v52-editor-row .removeEditItem{
+  min-height:38px!important;
+  padding:5px!important;
+  font-size:11px!important;
+}
+.v52-edit-total{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:10px;
+  padding:11px 12px;
+  border-radius:12px;
+  background:#edf7f3;
+}
+.v52-deduction-row{
+  display:grid;
+  grid-template-columns:110px 1fr 1.2fr 44px;
+  gap:6px;
+  align-items:center;
+  margin-top:7px;
+}
+.v52-deduction-row input{
+  width:100%!important;
+  min-width:0!important;
+  height:42px!important;
+  min-height:42px!important;
+  padding:0 8px!important;
+  font-size:13px!important;
+}
+.v52-modal-actions{
+  display:grid;
+  grid-template-columns:1.3fr 1fr;
+  gap:8px;
+  margin-top:14px;
+}
+.v52-modal-actions button{height:52px!important}
+
+/* 메인 반품/차감 상세에 수정 버튼 */
+.v41-actions{
+  grid-template-columns:1fr 1fr 1fr!important;
+}
+.v41-actions .editBatch{
+  background:#edf3f1!important;
+  color:#21483e!important;
+}
+
+@media(max-width:480px){
+  #draftItems .v52-draft-row{
+    grid-template-columns:24px minmax(78px,1.4fr) 38px 58px 64px 70px;
+    gap:4px;
+    padding:8px 7px;
+  }
+  .v52-draft-name b{font-size:14px}
+  .v52-draft-num,.v52-draft-price,.v52-draft-total{font-size:12px}
+  .v52-draft-actions button{padding:5px 6px!important;font-size:11px!important}
+  .v52-wh-head,.v52-wh-row{
+    grid-template-columns:82px 58px 76px 76px 46px;
+    gap:4px;
+    font-size:11px;
+  }
+  .v52-edit-meta{grid-template-columns:1fr 1fr}
+  .v52-editor-head,.v52-editor-row{
+    grid-template-columns:minmax(78px,1.35fr) 48px 64px 70px 38px;
+    gap:4px;
+  }
+  .v52-deduction-row{
+    grid-template-columns:96px 88px minmax(70px,1fr) 38px;
+    gap:4px;
+  }
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v51</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v52</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -1294,28 +1562,39 @@ function wholesalerBatches(name){
 function showWholesalerHistory(name){
   const area=$('#wholesalerHistory');
   if(!area)return;
-  const rows=wholesalerBatches(name).sort((a,b)=>String(b.sentDate||'').localeCompare(String(a.sentDate||'')));
-  const totalSent=rows.reduce((s,b)=>s+(Number(b.total)||0),0);
-  const totalDeducted=rows.reduce((s,b)=>s+(Number(b.deductedTotal)||Number(b.deducted)||0),0);
+  const rows=load(BATCH,[])
+    .filter(b=>(b.wholesaler||'')===name)
+    .sort((a,b)=>String(b.sentDate||'').localeCompare(String(a.sentDate||'')));
+  const totalSent=rows.reduce((sum,b)=>sum+n(b.sentTotal),0);
+  const totalDeducted=rows.reduce((sum,b)=>sum+batchStats(b).deducted,0);
 
   area.classList.remove('hidden');
   area.innerHTML=`
-    <div class="row" style="align-items:center">
+    <div class="row" style="align-items:center;margin-bottom:8px">
       <h3 style="margin:0;flex:1">${esc(name)} 반품내역</h3>
       <button type="button" class="secondary" id="closeWhHistory">닫기</button>
     </div>
+    <div class="note" style="margin-bottom:9px">총 ${rows.length}건 · 반품 ${won(totalSent)} · 빠진금액 ${won(totalDeducted)}</div>
     ${rows.length?`
-      <div class="note" style="margin:8px 0">총 ${rows.length}건 · 보낸금액 ${won(totalSent)}${totalDeducted?` · 차감확인 ${won(totalDeducted)}`:''}</div>
-      <div style="display:flex;flex-direction:column;gap:9px">
-        ${rows.map(b=>`
-          <div style="border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff">
-            <div><b>${esc(b.sentDate||'날짜 없음')}</b> · ${b.items?.length||0}종 · <b>${won(b.total||0)}</b></div>
-            <div class="note" style="margin-top:5px">${(b.items||[]).map(i=>`${esc(i.drug)} ${i.qty}T · ${won(i.total)}`).join(' / ')||'품목 없음'}</div>
-            ${b.deductions&&b.deductions.length?`<div class="note" style="margin-top:5px">차감: ${b.deductions.map(d=>`${esc(d.date||'')} ${won(d.amount||0)}`).join(' / ')}</div>`:''}
-          </div>`).join('')}
+      <div class="v52-wh-head">
+        <span>날짜</span><span>품목</span><span>총금액</span><span>빠진금액</span><span></span>
+      </div>
+      <div>
+        ${rows.map(b=>{
+          const st=batchStats(b);
+          return `<div class="v52-wh-row">
+            <b>${esc(b.sentDate||'')}</b>
+            <span>${(b.items||[]).length}종</span>
+            <b>${won(b.sentTotal)}</b>
+            <b style="${st.deducted>n(b.sentTotal)?'color:#087d63':''}">${won(st.deducted)}</b>
+            <button type="button" class="secondary whEditBatch" data-id="${b.id}">수정</button>
+          </div>`;
+        }).join('')}
       </div>`:
-      '<div class="note" style="margin-top:10px">이 도매상으로 마감한 반품내역이 아직 없습니다.</div>'}`;
+      '<div class="note" style="padding:14px;text-align:center">이 도매상으로 마감한 반품내역이 아직 없습니다.</div>'}`;
+
   $('#closeWhHistory').onclick=()=>area.classList.add('hidden');
+  $$('.whEditBatch').forEach(btn=>btn.onclick=()=>openBatchEditor(btn.dataset.id,name));
 }
 
 function getWholesalers(){
@@ -1522,27 +1801,23 @@ function renderDraft(){
   saveDraft();
 
   const rows=draftItems.map((x,i)=>`
-    <div class="itemRow" style="padding:10px 12px">
-      <div style="display:grid;grid-template-columns:28px minmax(110px,1fr) auto auto auto auto;gap:8px;align-items:center">
-        <span class="badge" style="min-width:28px;text-align:center">${i+1}</span>
-        <div style="min-width:0">
-          <b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.drug)}</b>
-          <small style="color:var(--muted)">${x.inputMode==='ptp'?'PTP':'낱알'}${x.countShots&&x.countShots.length>1?' · '+x.countShots.length+'장 합산':''}</small>
-        </div>
-        <b style="white-space:normal;overflow-wrap:anywhere">${x.qty}T</b>
-        <span style="white-space:normal;overflow-wrap:anywhere">${won(x.unitPrice)}/T</span>
-        <b style="white-space:normal;overflow-wrap:anywhere">${won(x.total)}</b>
-        <div style="display:flex;gap:5px">
-          <button class="secondary editDraft" data-id="${x.id}" style="padding:8px 10px">수정</button>
-          <button class="danger delDraft" data-id="${x.id}" style="padding:8px 10px">삭제</button>
-        </div>
+    <div class="v52-draft-row">
+      <span class="badge">${i+1}</span>
+      <div class="v52-draft-name">
+        <b>${esc(x.drug)}</b>
+        <small>${x.inputMode==='ptp'?'PTP':'낱알'}${x.countShots&&x.countShots.length>1?' · '+x.countShots.length+'장':''}</small>
+      </div>
+      <b class="v52-draft-num">${x.qty}T</b>
+      <span class="v52-draft-price">${won(x.unitPrice)}/T</span>
+      <b class="v52-draft-total">${won(x.total)}</b>
+      <div class="v52-draft-actions">
+        <button class="secondary editDraft" data-id="${x.id}">수정</button>
+        <button class="danger delDraft" data-id="${x.id}">삭제</button>
       </div>
     </div>`).join('');
 
   $('#draftItems').innerHTML=rows||'<div class="note" style="text-align:center;padding:18px">아직 추가한 약이 없습니다.</div>';
-
   $('#draftKinds').textContent=draftItems.length+'종';
-  const draftQtyEl=$('#draftQty'); if(draftQtyEl) draftQtyEl.textContent=draftItems.reduce((s,x)=>s+x.qty,0)+'T';
   $('#draftTotal').textContent=won(draftItems.reduce((s,x)=>s+x.total,0));
 
   $$('.delDraft').forEach(b=>b.onclick=()=>{draftItems=draftItems.filter(x=>x.id!==b.dataset.id);renderDraft()});
@@ -1758,6 +2033,7 @@ function renderRecords(){
 
             <div class="v41-actions">
               <button class="primary addDeduction" data-id="${b.id}">빠진금액 입력</button>
+              <button class="secondary editBatch" data-id="${b.id}">수정</button>
               <button class="danger delBatch" data-id="${b.id}">삭제</button>
             </div>
           </div>
@@ -1779,6 +2055,11 @@ function renderRecords(){
     batch.deductions=batch.deductions||[];
     batch.deductions.push({date,amount,note});
     store(BATCH,arr);renderRecords();
+  });
+
+  $$('.editBatch').forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
+    openBatchEditor(btn.dataset.id);
   });
 
   $$('.delBatch').forEach(btn=>btn.onclick=e=>{
@@ -2422,6 +2703,211 @@ window.addEventListener('DOMContentLoaded',()=>{
 </script>
 
 
+
+<div id="batchEditModal" aria-hidden="true">
+  <div class="v52-modal-sheet">
+    <div class="v52-modal-head">
+      <h2>보낸 반품 수정</h2>
+      <button type="button" class="v52-modal-close" id="closeBatchEditor">✕</button>
+    </div>
+
+    <div class="v52-edit-meta">
+      <div><label>보낸 날짜</label><input type="date" id="editBatchDate"></div>
+      <div><label>도매상</label><input id="editBatchWholesaler" list="wholesalers"></div>
+    </div>
+
+    <div class="v52-editor-card">
+      <b>반품 약 목록</b>
+      <div class="v52-editor-head">
+        <span>약명</span><span>수량</span><span>1T 금액</span><span>금액</span><span></span>
+      </div>
+      <div id="editBatchItems"></div>
+      <button type="button" class="secondary" id="addEditBatchItem" style="width:100%;margin-top:8px">+ 약 추가</button>
+      <div class="v52-edit-total"><span>총 반품금액</span><b id="editBatchTotal">0원</b></div>
+    </div>
+
+    <div class="v52-editor-card">
+      <div style="display:flex;align-items:center;gap:8px">
+        <b style="flex:1">빠진금액 내역</b>
+        <button type="button" class="secondary" id="addEditDeduction">+ 차감 추가</button>
+      </div>
+      <div id="editBatchDeductions"></div>
+      <div class="v52-edit-total"><span>실제 빠진금액</span><b id="editDeductTotal">0원</b></div>
+    </div>
+
+    <div class="v52-modal-actions">
+      <button type="button" class="primary" id="saveBatchEditor">수정 저장</button>
+      <button type="button" class="secondary" id="cancelBatchEditor">취소</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ===== v52 이미 보낸 반품 수정기 ===== */
+let v52EditBatchId=null;
+let v52EditReturnWholesaler='';
+
+function v52EscAttr(v){
+  return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function v52EditState(){
+  const rows=load(BATCH,[]);
+  return rows.find(x=>x.id===v52EditBatchId)||null;
+}
+
+function v52RecalcEditor(){
+  const itemRows=[...document.querySelectorAll('#editBatchItems .v52-editor-row')];
+  let total=0;
+  itemRows.forEach(row=>{
+    const qty=n(row.querySelector('.eQty').value);
+    const unit=n(row.querySelector('.eUnit').value);
+    const amount=qty*unit;
+    row.querySelector('.eAmount').textContent=won(amount);
+    total+=amount;
+  });
+  $('#editBatchTotal').textContent=won(total);
+
+  let dtotal=0;
+  document.querySelectorAll('#editBatchDeductions .v52-deduction-row').forEach(row=>{
+    dtotal+=n(row.querySelector('.dAmount').value);
+  });
+  $('#editDeductTotal').textContent=won(dtotal);
+}
+
+function v52RenderEditItems(items){
+  $('#editBatchItems').innerHTML=(items||[]).map((x,i)=>`
+    <div class="v52-editor-row">
+      <input class="eDrug" value="${v52EscAttr(x.drug)}" aria-label="약명">
+      <input class="eQty" type="number" min="0" inputmode="numeric" value="${n(x.qty)}" aria-label="수량">
+      <input class="eUnit" type="number" min="0" inputmode="numeric" value="${n(x.unitPrice)}" aria-label="1T 금액">
+      <b class="eAmount">${won(n(x.qty)*n(x.unitPrice))}</b>
+      <button type="button" class="danger removeEditItem">삭제</button>
+    </div>`).join('');
+  $$('#editBatchItems input').forEach(inp=>inp.addEventListener('input',v52RecalcEditor));
+  $$('.removeEditItem').forEach(btn=>btn.onclick=()=>{
+    btn.closest('.v52-editor-row').remove();
+    v52RecalcEditor();
+  });
+  v52RecalcEditor();
+}
+
+function v52RenderDeductions(ds){
+  $('#editBatchDeductions').innerHTML=(ds||[]).map(d=>`
+    <div class="v52-deduction-row">
+      <input class="dDate" type="date" value="${v52EscAttr(d.date||today())}">
+      <input class="dAmount" type="number" min="0" inputmode="numeric" value="${n(d.amount)}" placeholder="금액">
+      <input class="dNote" value="${v52EscAttr(d.note||'')}" placeholder="메모">
+      <button type="button" class="danger removeDeduction">삭제</button>
+    </div>`).join('');
+  $$('#editBatchDeductions .dAmount').forEach(inp=>inp.addEventListener('input',v52RecalcEditor));
+  $$('.removeDeduction').forEach(btn=>btn.onclick=()=>{
+    btn.closest('.v52-deduction-row').remove();
+    v52RecalcEditor();
+  });
+  v52RecalcEditor();
+}
+
+function openBatchEditor(id,returnWholesaler=''){
+  const b=load(BATCH,[]).find(x=>x.id===id);
+  if(!b)return;
+  v52EditBatchId=id;
+  v52EditReturnWholesaler=returnWholesaler||'';
+  $('#editBatchDate').value=b.sentDate||today();
+  $('#editBatchWholesaler').value=b.wholesaler||'';
+  v52RenderEditItems(JSON.parse(JSON.stringify(b.items||[])));
+  v52RenderDeductions(JSON.parse(JSON.stringify(b.deductions||[])));
+  $('#batchEditModal').classList.add('open');
+  $('#batchEditModal').setAttribute('aria-hidden','false');
+}
+
+function closeBatchEditor(){
+  $('#batchEditModal').classList.remove('open');
+  $('#batchEditModal').setAttribute('aria-hidden','true');
+  v52EditBatchId=null;
+}
+
+$('#closeBatchEditor').onclick=closeBatchEditor;
+$('#cancelBatchEditor').onclick=closeBatchEditor;
+$('#batchEditModal').addEventListener('click',e=>{if(e.target.id==='batchEditModal')closeBatchEditor()});
+
+$('#addEditBatchItem').onclick=()=>{
+  $('#editBatchItems').insertAdjacentHTML('beforeend',`
+    <div class="v52-editor-row">
+      <input class="eDrug" placeholder="약명">
+      <input class="eQty" type="number" min="0" inputmode="numeric" value="0">
+      <input class="eUnit" type="number" min="0" inputmode="numeric" value="0">
+      <b class="eAmount">0원</b>
+      <button type="button" class="danger removeEditItem">삭제</button>
+    </div>`);
+  const row=$('#editBatchItems').lastElementChild;
+  row.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',v52RecalcEditor));
+  row.querySelector('.removeEditItem').onclick=()=>{row.remove();v52RecalcEditor()};
+  row.querySelector('.eDrug').focus();
+};
+
+$('#addEditDeduction').onclick=()=>{
+  $('#editBatchDeductions').insertAdjacentHTML('beforeend',`
+    <div class="v52-deduction-row">
+      <input class="dDate" type="date" value="${today()}">
+      <input class="dAmount" type="number" min="0" inputmode="numeric" value="0" placeholder="금액">
+      <input class="dNote" placeholder="메모">
+      <button type="button" class="danger removeDeduction">삭제</button>
+    </div>`);
+  const row=$('#editBatchDeductions').lastElementChild;
+  row.querySelector('.dAmount').addEventListener('input',v52RecalcEditor);
+  row.querySelector('.removeDeduction').onclick=()=>{row.remove();v52RecalcEditor()};
+  row.querySelector('.dAmount').focus();
+  v52RecalcEditor();
+};
+
+$('#saveBatchEditor').onclick=()=>{
+  const all=load(BATCH,[]);
+  const b=all.find(x=>x.id===v52EditBatchId);
+  if(!b)return;
+
+  const date=$('#editBatchDate').value;
+  const wholesaler=$('#editBatchWholesaler').value.trim();
+  if(!date||!wholesaler){alert('날짜와 도매상을 입력해 주세요.');return}
+
+  const items=[...document.querySelectorAll('#editBatchItems .v52-editor-row')].map(row=>{
+    const oldIndex=[...document.querySelectorAll('#editBatchItems .v52-editor-row')].indexOf(row);
+    const old=(b.items||[])[oldIndex]||{};
+    const drug=row.querySelector('.eDrug').value.trim();
+    const qty=n(row.querySelector('.eQty').value);
+    const unitPrice=n(row.querySelector('.eUnit').value);
+    return {...old,drug,qty,unitPrice,total:qty*unitPrice};
+  }).filter(x=>x.drug && x.qty>0);
+
+  if(!items.length){alert('반품 약을 1개 이상 남겨 주세요.');return}
+
+  const deductions=[...document.querySelectorAll('#editBatchDeductions .v52-deduction-row')].map(row=>({
+    id:uid(),
+    date:row.querySelector('.dDate').value||today(),
+    amount:n(row.querySelector('.dAmount').value),
+    note:row.querySelector('.dNote').value.trim()
+  })).filter(x=>x.amount>0);
+
+  b.sentDate=date;
+  b.wholesaler=wholesaler;
+  b.items=items;
+  b.sentTotal=items.reduce((sum,x)=>sum+n(x.total),0);
+  b.deductions=deductions;
+  store(BATCH,all);
+
+  let wh=load(WHOLE,[]);
+  if(!wh.includes(wholesaler)){wh.push(wholesaler);store(WHOLE,wh)}
+
+  const returnName=v52EditReturnWholesaler;
+  closeBatchEditor();
+  refreshWholesalers();
+  renderRecords();
+  if(returnName && $('#wholesalerHistory') && !$('#wholesalerHistory').classList.contains('hidden')){
+    showWholesalerHistory(returnName===wholesaler?wholesaler:returnName);
+  }
+};
+</script>
+
 </body>
 </html>
-
