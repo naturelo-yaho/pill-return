@@ -2105,10 +2105,287 @@ main,
 }
 </style>
 
+
+<style>
+/* ===== v66 약명 13자 + 한 줄 정렬 ===== */
+#draftItems .v64-draft-row{
+  padding:0 !important;
+}
+.v66-draft-main{
+  display:grid !important;
+  grid-template-columns:28px minmax(120px,1.45fr) 48px 78px 92px 94px !important;
+  column-gap:6px !important;
+  align-items:center !important;
+  width:100% !important;
+  min-height:72px !important;
+  padding:10px 10px !important;
+  box-sizing:border-box !important;
+}
+.v66-draft-main > *{
+  min-width:0 !important;
+  align-self:center !important;
+}
+.v66-draft-main .badge{
+  margin:0 !important;
+}
+.v66-drug-block{
+  min-width:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+}
+.v66-drug-block b{
+  display:block !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:clip !important;
+  font-size:14px !important;
+  line-height:1.15 !important;
+  font-weight:900 !important;
+  margin:0 !important;
+}
+.v66-drug-block small{
+  display:block !important;
+  margin-top:3px !important;
+  color:var(--muted) !important;
+  font-size:10px !important;
+  line-height:1.05 !important;
+  white-space:nowrap !important;
+}
+.v66-qty,
+.v66-unit,
+.v66-total{
+  display:block !important;
+  text-align:right !important;
+  white-space:nowrap !important;
+  line-height:1.1 !important;
+}
+.v66-qty{font-size:13px !important;}
+.v66-unit{font-size:12px !important;}
+.v66-total{font-size:13px !important;font-weight:900 !important;}
+
+.v66-actions{
+  width:94px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:5px !important;
+}
+.v66-actions button{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:38px !important;
+  padding:6px 3px !important;
+  margin:0 !important;
+  font-size:11px !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+
+/* 실제 갤럭시 폭 */
+@media(max-width:480px){
+  .v66-draft-main{
+    grid-template-columns:24px minmax(108px,1.55fr) 40px 66px 76px 82px !important;
+    column-gap:4px !important;
+    padding:9px 7px !important;
+  }
+  .v66-drug-block b{font-size:13px !important;}
+  .v66-qty{font-size:12px !important;}
+  .v66-unit{font-size:11px !important;}
+  .v66-total{font-size:12px !important;}
+  .v66-actions{width:82px !important;gap:4px !important;}
+  .v66-actions button{font-size:10.5px !important;padding:6px 2px !important;}
+}
+
+@media(max-width:380px){
+  .v66-draft-main{
+    grid-template-columns:22px minmax(100px,1.55fr) 38px 60px 70px 76px !important;
+    column-gap:3px !important;
+    padding:8px 6px !important;
+  }
+  .v66-drug-block b{font-size:12.5px !important;}
+  .v66-unit{font-size:10.5px !important;}
+  .v66-total{font-size:11.5px !important;}
+  .v66-actions{width:76px !important;}
+}
+</style>
+
+
+<style>
+/* ===== v67: 번호-약명 정확한 한 줄 + 하단 정보 4열 ===== */
+
+/* 품목 카드 */
+#draftItems .v64-draft-row{
+  width:100% !important;
+  box-sizing:border-box !important;
+  padding:12px 14px 11px 12px !important;
+  overflow:hidden !important;
+}
+
+/* 첫 줄: 번호와 약명은 정확히 같은 중심선 */
+.v67-draft-top{
+  display:grid !important;
+  grid-template-columns:30px minmax(0,1fr) 96px !important;
+  column-gap:8px !important;
+  align-items:center !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+.v67-draft-top > *{
+  min-width:0 !important;
+  align-self:center !important;
+}
+.v67-draft-top .badge{
+  margin:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:30px !important;
+  height:30px !important;
+  line-height:1 !important;
+}
+.v67-drug{
+  display:block !important;
+  margin:0 !important;
+  padding:0 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:clip !important;
+  font-size:15px !important;
+  line-height:30px !important;
+  height:30px !important;
+  font-weight:900 !important;
+  word-break:keep-all !important;
+}
+.v67-actions{
+  width:96px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:5px !important;
+  align-items:center !important;
+}
+.v67-actions button{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:38px !important;
+  margin:0 !important;
+  padding:6px 3px !important;
+  border-radius:11px !important;
+  font-size:11px !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+
+/* 둘째 줄:
+   낱알/사진수 | 1알당 가격 | 총 알수 | 총 금액
+   우측에 여백을 남기고 모든 행 동일 열 */
+.v67-draft-bottom{
+  margin-top:9px !important;
+  margin-left:38px !important;
+  margin-right:8px !important;
+  width:calc(100% - 46px) !important;
+  box-sizing:border-box !important;
+  display:grid !important;
+  grid-template-columns:minmax(76px,1.15fr) minmax(72px,1fr) 52px minmax(78px,1fr) !important;
+  column-gap:8px !important;
+  align-items:center !important;
+  min-height:26px !important;
+}
+.v67-draft-bottom > *{
+  min-width:0 !important;
+  margin:0 !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+}
+.v67-meta{
+  color:var(--muted) !important;
+  font-size:11px !important;
+  text-align:left !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+.v67-unit{
+  font-size:12px !important;
+  text-align:right !important;
+}
+.v67-qty{
+  font-size:12px !important;
+  text-align:right !important;
+}
+.v67-total{
+  font-size:12px !important;
+  font-weight:900 !important;
+  text-align:right !important;
+}
+
+/* 갤럭시 모바일 폭 */
+@media(max-width:480px){
+  #draftItems .v64-draft-row{
+    padding:11px 12px 10px 9px !important;
+  }
+  .v67-draft-top{
+    grid-template-columns:28px minmax(0,1fr) 84px !important;
+    column-gap:6px !important;
+  }
+  .v67-draft-top .badge{
+    width:28px !important;
+    height:28px !important;
+  }
+  .v67-drug{
+    height:28px !important;
+    line-height:28px !important;
+    font-size:13px !important;
+  }
+  .v67-actions{
+    width:84px !important;
+    gap:4px !important;
+  }
+  .v67-actions button{
+    min-height:36px !important;
+    font-size:10px !important;
+    padding:5px 2px !important;
+  }
+  .v67-draft-bottom{
+    margin-left:34px !important;
+    margin-right:7px !important;
+    width:calc(100% - 41px) !important;
+    grid-template-columns:minmax(68px,1.15fr) minmax(64px,1fr) 44px minmax(70px,1fr) !important;
+    column-gap:5px !important;
+  }
+  .v67-meta{font-size:10.5px !important;}
+  .v67-unit,.v67-qty,.v67-total{font-size:11px !important;}
+}
+
+@media(max-width:380px){
+  .v67-draft-top{
+    grid-template-columns:26px minmax(0,1fr) 78px !important;
+    column-gap:5px !important;
+  }
+  .v67-draft-top .badge{
+    width:26px !important;
+    height:26px !important;
+  }
+  .v67-drug{
+    height:26px !important;
+    line-height:26px !important;
+    font-size:12.5px !important;
+  }
+  .v67-actions{width:78px !important;}
+  .v67-draft-bottom{
+    margin-left:31px !important;
+    margin-right:6px !important;
+    width:calc(100% - 37px) !important;
+    grid-template-columns:minmax(62px,1.1fr) minmax(60px,1fr) 42px minmax(64px,1fr) !important;
+    column-gap:4px !important;
+  }
+  .v67-meta{font-size:10px !important;}
+  .v67-unit,.v67-qty,.v67-total{font-size:10.5px !important;}
+}
+</style>
+
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v65</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v67</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -2833,22 +3110,20 @@ function renderDraft(){
 
   const rows=draftItems.map((x,i)=>`
     <div class="v64-draft-row">
-      <div class="v64-draft-top">
+      <div class="v67-draft-top">
         <span class="badge">${i+1}</span>
-        <div class="v64-draft-name">
-          <b class="${(x.photo||(x.countShots&&x.countShots.length))?'photoClickable':''} draftDrugPhoto" data-id="${x.id}">${esc(x.drug)}</b>
-          <small>${x.inputMode==='ptp'?'PTP':'낱알'}${x.countShots&&x.countShots.length>1?' · '+x.countShots.length+'장':''}</small>
-        </div>
-        <div class="v64-draft-actions">
+        <b class="v67-drug ${(x.photo||(x.countShots&&x.countShots.length))?'photoClickable':''} draftDrugPhoto"
+           data-id="${x.id}" title="${esc(x.drug)}">${esc(String(x.drug||'').trim().length>13 ? String(x.drug||'').trim().slice(0,13)+'..' : String(x.drug||'').trim())}</b>
+        <div class="v67-actions">
           <button class="secondary editDraft" data-id="${x.id}">수정</button>
           <button class="danger delDraft" data-id="${x.id}">삭제</button>
         </div>
       </div>
-      <div class="v64-draft-bottom">
-        <div class="v65-meta">${x.inputMode==='ptp'?'PTP':'낱알'}${x.countShots&&x.countShots.length>1?' · '+x.countShots.length+'장':''}</div>
-        <div class="v64-metric"><small>수량</small><b>${x.qty}T</b></div>
-        <div class="v64-metric"><small>1T 금액</small><span>${won(x.unitPrice)}/T</span></div>
-        <div class="v64-metric"><small>금액</small><b>${won(x.total)}</b></div>
+      <div class="v67-draft-bottom">
+        <span class="v67-meta">${x.inputMode==='ptp'?'PTP':'낱알'}${x.countShots&&x.countShots.length>1?' · '+x.countShots.length+'장':''}</span>
+        <span class="v67-unit">${won(x.unitPrice)}/알</span>
+        <b class="v67-qty">${x.qty}T</b>
+        <b class="v67-total">${won(x.total)}</b>
       </div>
     </div>`).join('');
 
@@ -4020,6 +4295,14 @@ $('#photoViewerNext').onclick=()=>{
   $('#photoViewerTitle').textContent=`사진 ${v53PhotoIndex+1}/${v53PhotoList.length}`;
   v53RenderPhoto();
 };
+</script>
+
+
+<script>
+function v66ShortDrugName(name){
+  const t=String(name||'').trim();
+  return t.length>13 ? t.slice(0,13)+'..' : t;
+}
 </script>
 
 </body>
