@@ -2385,7 +2385,7 @@ main,
 </head>
 <body>
 <header>
-  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v71</span></div>
+  <div class="row" style="align-items:center"><h1 style="flex:1">낱알반품 관리</h1><span id="appVersion" style="font-size:11px;opacity:.85">v74</span></div>
 </header><div id="shareHealth" style="display:none"></div>
 
 
@@ -2607,34 +2607,42 @@ main,
 
     <div class="bottle-summary">
       <div><small>품목 수</small><b id="bottleKinds">0종</b></div>
-      <div><small>총 수량</small><b id="bottleTotalQty">0통</b></div>
       <div><small>총 금액</small><b id="bottleGrandTotal">0원</b></div>
     </div>
   </section>
 
   <section class="card">
-    <h2>완통반품 보내기</h2>
-    <div class="bottle-send-grid">
-      <div>
-        <label>보낸 날짜</label>
-        <input id="bottleSentDate" type="date">
-      </div>
+    <h2>3. 발송 정보 및 마감</h2>
+    <div class="grid2">
+      <div><label>보낸 날짜</label><input id="bottleSentDate" type="date"></div>
       <div>
         <label>도매상</label>
-        <input id="bottleWholesaler" list="bottleWholesalers" placeholder="도매상">
+        <input id="bottleWholesaler" list="bottleWholesalers" placeholder="예: 백제약품">
         <datalist id="bottleWholesalers"></datalist>
         <div id="bottleWholeChips" class="chips"></div>
       </div>
     </div>
-    <div class="totalBox" style="margin-top:12px">
-      <div class="note">이번 완통반품 총 금액</div>
-      <b id="bottleCloseTotal">0원</b>
+    <textarea id="bottleBatchMemo" placeholder="메모" style="margin-top:10px"></textarea>
+    <div class="toolbar" style="margin-top:10px">
+      <button class="secondary" id="bottleResetDraft">초기화</button>
+      <button class="primary" id="bottleCloseBatch">오늘 완통반품 마감</button>
     </div>
-    <button type="button" class="primary" id="bottleCloseBatch" style="width:100%;margin-top:10px">오늘 완통반품 마감</button>
   </section>
 
   <section class="card">
-    <h2>완통반품 기록</h2>
+    <div class="row">
+      <h2 style="margin:0;flex:1">완통반품 / 차감 내역</h2>
+      <button class="secondary" id="bottleExportBtn">백업</button>
+      <button class="secondary" id="bottleImportBtn">백업 복원</button>
+      <input id="bottleImportFile" class="hidden" type="file" accept=".json,application/json">
+    </div>
+    <div class="note" style="margin:8px 0 10px">
+      백업파일에는 낱알·PTP·완통반품의 반품기록, 작성 중 목록, 차감내역, 약명·약가 이력, 도매상 정보가 모두 포함됩니다.
+    </div>
+    <div class="row" style="margin-bottom:8px">
+      <div class="grow note">마지막 백업: <b id="bottleLastBackupText">없음</b></div>
+    </div>
+    <input id="bottleSearch" class="search" placeholder="약명 · 도매상 · 날짜 검색">
     <div id="bottleHistory"></div>
   </section>
 </div>
@@ -2918,7 +2926,7 @@ function refreshWholesalers(){
     $$('.whBtn').forEach(b=>b.onclick=()=>showWholesalerHistory(b.dataset.name));
   }
 
-  const manage=$('#wholesalerManageList');
+  const manage=$('#wholeManage');
   if(manage){
     manage.innerHTML=arr.map(x=>`
       <div class="row" style="padding:7px 0;border-bottom:1px solid var(--line)">
@@ -3446,7 +3454,10 @@ $('#wholeAdd').onclick=()=>{const x=$('#wholeNew').value.trim();if(!x)return;con
 
 function refreshBackupMeta(){
   const meta=load(BACKUPMETA,null);
-  $('#lastBackupText').textContent=meta&&meta.at ? new Date(meta.at).toLocaleString('ko-KR') : '없음';
+  const text=meta&&meta.at ? new Date(meta.at).toLocaleString('ko-KR') : '없음';
+  $('#lastBackupText').textContent=text;
+  const bottleText=document.getElementById('bottleLastBackupText');
+  if(bottleText)bottleText.textContent=text;
 }
 function makeBackupPayload(){
   return {
@@ -3482,8 +3493,10 @@ function downloadBackup(){
 
 $('#exportBtn').onclick=downloadBackup;
 $('#importBtn').onclick=()=>$('#importFile').click();
-$('#importFile').onchange=async e=>{
-  const f=e.target.files[0];if(!f)return;
+$('#importFile').onchange=e=>restoreBackupFromFile(e.target.files[0],e.target);
+
+async function restoreBackupFromFile(f,inputEl){
+  if(!f)return;
   try{
     const d=JSON.parse(await f.text());
     if(!Array.isArray(d.batches))throw new Error('반품기록 형식이 없습니다.');
@@ -3502,13 +3515,16 @@ $('#importFile').onchange=async e=>{
     store('pill-return-bottle-batches-v46',Array.isArray(d.bottleBatches)?d.bottleBatches:[]);
 
     refreshMaster();refreshWholesalers();renderDraft();renderRecords();resetCurrentItem();
+    if(typeof window.refreshBottleMaster==='function'){
+      window.refreshBottleMaster();window.refreshBottleWholesalers();window.renderBottleDraft();window.renderBottleHistory();
+    }
     alert('백업 복원이 완료되었습니다.');
   }catch(err){
     alert('올바른 낱알반품 백업파일이 아닙니다.\n'+(err.message||''));
   }finally{
-    e.target.value='';
+    if(inputEl)inputEl.value='';
   }
-};
+}
 
 
 
@@ -3880,12 +3896,9 @@ window.addEventListener('DOMContentLoaded',()=>{
       </div>`).join(''):'<div class="note" style="text-align:center;padding:16px">아직 추가한 약이 없습니다.</div>';
 
     const kinds=bottleDraft.length;
-    const qty=bottleDraft.reduce((a,x)=>a+x.qty,0);
     const total=bottleDraft.reduce((a,x)=>a+x.total,0);
     document.getElementById('bottleKinds').textContent=kinds+'종';
-    document.getElementById('bottleTotalQty').textContent=qty+'통';
     document.getElementById('bottleGrandTotal').textContent=kwon(total);
-    document.getElementById('bottleCloseTotal').textContent=kwon(total);
 
     document.querySelectorAll('.bottleDelete').forEach(btn=>btn.onclick=()=>{
       bottleDraft.splice(Number(btn.dataset.i),1);
@@ -3908,33 +3921,109 @@ window.addEventListener('DOMContentLoaded',()=>{
     clearBottleItem();
   }
 
+  function bottleBatchStats(b){
+    const deducted=(b.deductions||[]).reduce((s,d)=>s+(Number(d.amount)||0),0);
+    const sent=Number(b.total)||0;
+    const diff=deducted-sent;
+    return{deducted,diff,remain:Math.max(sent-deducted,0),extra:Math.max(deducted-sent,0)};
+  }
+
   function renderBottleHistory(){
-    const rows=jload(BOTTLE_BATCH,[]).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+    const searchEl=document.getElementById('bottleSearch');
+    const q=(searchEl?searchEl.value:'').trim().toLowerCase();
+    const rows=jload(BOTTLE_BATCH,[])
+      .filter(b=>!q||(b.wholesaler||'').toLowerCase().includes(q)||(b.date||'').includes(q)||(b.items||[]).some(i=>(i.drug||'').toLowerCase().includes(q)))
+      .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
     const el=document.getElementById('bottleHistory');
     if(!el)return;
     if(!rows.length){
-      el.innerHTML='<div class="note" style="text-align:center;padding:16px">완통반품 기록이 없습니다.</div>';
+      el.innerHTML='<div class="note" style="text-align:center;padding:18px">마감된 완통반품 기록이 없습니다.</div>';
       return;
     }
     el.innerHTML=`
-      <div class="bottle-history-head"><span>날짜</span><span>도매상</span><span>총금액</span></div>
-      ${rows.map((b,bi)=>`
-        <div class="bottle-history-card">
-          <div class="bottle-history-row bottleHistoryToggle">
-            <b>${b.date}</b><b>${b.wholesaler||'미지정'}</b><b>${kwon(b.total)}</b>
+      <div class="v41-history-head">
+        <span>날짜</span>
+        <span>도매상</span>
+        <span>상태</span>
+        <span>총금액</span>
+        <span>빠진금액</span>
+      </div>
+      ${rows.map(b=>{
+        const st=bottleBatchStats(b);
+        const diffText=(st.diff>0?'+':'')+kwon(st.diff);
+        const status=st.remain<.01?'차감완료':'차감중';
+        return `
+        <div class="v41-history-card" data-id="${b.id}">
+          <div class="v41-history-row bottleHistoryToggle" data-id="${b.id}">
+            <span class="v41-date">${esc(b.date||'')}</span>
+            <span class="v41-whole">${esc(b.wholesaler||'미지정')}</span>
+            <span class="v58-status ${status==='차감완료'?'done':'pending'}">${status}</span>
+            <span class="v41-money">${kwon(b.total)}</span>
+            <span class="v41-money v41-deduct ${st.diff>0?'plus':''}">${kwon(st.deducted)}</span>
           </div>
-          <div class="bottle-history-detail">
-            ${b.items.map(x=>`<div style="display:grid;grid-template-columns:minmax(90px,1fr) 70px 46px 80px;gap:6px;padding:8px 0;border-bottom:1px solid #edf1ef;font-size:12px">
-              <b>${x.drug}</b><span style="text-align:right">${kwon(x.unitPrice)}/통</span><span style="text-align:right">${x.qty}통</span><b style="text-align:right">${kwon(x.total)}</b>
-            </div>`).join('')}
-            <button type="button" class="secondary bottleBatchEdit" data-id="${b.id}" style="margin-top:10px">수정</button>
-            <button type="button" class="danger bottleBatchDelete" data-id="${b.id}" style="margin-top:10px">기록 삭제</button>
+
+          <div class="v41-history-detail">
+            <div class="v41-items-head">
+              <span>약명</span>
+              <span>통 수</span>
+              <span>1통 금액</span>
+              <span>금액</span>
+            </div>
+
+            ${(b.items||[]).map(x=>`
+              <div class="v41-item-row">
+                <span class="drug">${esc(x.drug)}</span>
+                <span class="qty">${x.qty}통</span>
+                <span class="unit">${kwon(x.unitPrice)}/통</span>
+                <span class="amount">${kwon(x.total)}</span>
+              </div>`).join('')}
+
+            <div class="v41-detail-summary">
+              <div class="box"><small>총 반품금액</small><b>${kwon(b.total)}</b></div>
+              <div class="box"><small>실제 빠진금액</small><b>${kwon(st.deducted)}</b></div>
+              <div class="box diff"><small>차이</small><b>${diffText}</b></div>
+            </div>
+
+            ${(b.deductions||[]).length?`
+              <div class="v41-deductions">
+                <b>빠진금액 내역</b><br>
+                ${b.deductions.map((d,i)=>`${i+1}. ${d.date} · ${kwon(d.amount)}${d.note?' · '+esc(d.note):''}`).join('<br>')}
+              </div>`:''}
+
+            ${b.memo?`<div class="note" style="margin-top:10px">메모: ${esc(b.memo)}</div>`:''}
+
+            <div class="v41-actions">
+              <button type="button" class="primary addDeduction bottleAddDeduction" data-id="${b.id}">빠진금액 입력</button>
+              <button type="button" class="secondary editBatch bottleBatchEdit" data-id="${b.id}">수정</button>
+              <button type="button" class="danger delBatch bottleBatchDelete" data-id="${b.id}">삭제</button>
+            </div>
           </div>
-        </div>`).join('')}`;
-    document.querySelectorAll('.bottleHistoryToggle').forEach(x=>x.onclick=()=>x.parentElement.classList.toggle('open'));
+        </div>`;
+      }).join('')}`;
+
+    document.querySelectorAll('.bottleHistoryToggle').forEach(row=>row.onclick=()=>{
+      row.closest('.v41-history-card').classList.toggle('open');
+    });
     document.querySelectorAll('.bottleBatchEdit').forEach(btn=>btn.onclick=(e)=>{
       e.stopPropagation();
       openBottleBatchEditor(btn.dataset.id);
+    });
+    document.querySelectorAll('.bottleAddDeduction').forEach(btn=>btn.onclick=(e)=>{
+      e.stopPropagation();
+      const id=btn.dataset.id,rows2=jload(BOTTLE_BATCH,[]),b=rows2.find(x=>x.id===id);
+      if(!b)return;
+      const st=bottleBatchStats(b);
+      const date=prompt('빠진 날짜',ktoday());
+      if(date===null)return;
+      const amtRaw=prompt(`이번에 실제 빠진 금액\n현재 미차감 ${kwon(st.remain)}`,st.remain>0?String(st.remain):'');
+      if(amtRaw===null)return;
+      const amount=Number(String(amtRaw).replace(/,/g,''))||0;
+      if(amount<=0){alert('빠진금액을 입력해 주세요.');return}
+      const note=prompt('메모(선택)','')??'';
+      b.deductions=b.deductions||[];
+      b.deductions.push({id:'D'+Date.now(),date,amount,note});
+      jstore(BOTTLE_BATCH,rows2);
+      renderBottleHistory();
     });
     document.querySelectorAll('.bottleBatchDelete').forEach(btn=>btn.onclick=(e)=>{
       e.stopPropagation();
@@ -3949,12 +4038,14 @@ window.addEventListener('DOMContentLoaded',()=>{
     const date=document.getElementById('bottleSentDate').value||ktoday();
     const wholesaler=document.getElementById('bottleWholesaler').value.trim();
     if(!wholesaler){alert('도매상을 입력해 주세요.');return}
+    const memo=(document.getElementById('bottleBatchMemo')?.value||'').trim();
     const batches=jload(BOTTLE_BATCH,[]);
     batches.push({
       id:'B'+Date.now(),
-      date,wholesaler,
+      date,wholesaler,memo,
       items:JSON.parse(JSON.stringify(bottleDraft)),
-      total:bottleDraft.reduce((a,x)=>a+x.total,0)
+      total:bottleDraft.reduce((a,x)=>a+x.total,0),
+      deductions:[]
     });
     jstore(BOTTLE_BATCH,batches);
 
@@ -3970,6 +4061,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     renderBottleDraft();
     renderBottleHistory();
     document.getElementById('bottleWholesaler').value='';
+    if(document.getElementById('bottleBatchMemo'))document.getElementById('bottleBatchMemo').value='';
     alert('완통반품이 별도 기록으로 마감되었습니다.');
   }
 
@@ -3991,6 +4083,12 @@ window.addEventListener('DOMContentLoaded',()=>{
       total+=amount;
     });
     document.getElementById('editBottleTotal').textContent=kwon(total);
+
+    let dtotal=0;
+    document.querySelectorAll('#editBottleDeductions .v52-deduction-row').forEach(row=>{
+      dtotal+=Number(row.querySelector('.dAmount').value||0);
+    });
+    document.getElementById('editBottleDeductTotal').textContent=kwon(dtotal);
   }
 
   function renderBottleEditItems(items){
@@ -4011,13 +4109,32 @@ window.addEventListener('DOMContentLoaded',()=>{
     recalcBottleEditor();
   }
 
+  function renderBottleEditDeductions(ds){
+    const wrap=document.getElementById('editBottleDeductions');
+    wrap.innerHTML=(ds||[]).map(d=>`
+      <div class="v52-deduction-row">
+        <input class="dDate" type="date" value="${bottleEscAttr(d.date||ktoday())}">
+        <input class="dAmount" type="number" min="0" inputmode="numeric" value="${Number(d.amount)||0}" placeholder="금액">
+        <input class="dNote" value="${bottleEscAttr(d.note||'')}" placeholder="메모">
+        <button type="button" class="danger removeDeduction">삭제</button>
+      </div>`).join('');
+    wrap.querySelectorAll('.dAmount').forEach(inp=>inp.addEventListener('input',recalcBottleEditor));
+    wrap.querySelectorAll('.removeDeduction').forEach(btn=>btn.onclick=()=>{
+      btn.closest('.v52-deduction-row').remove();
+      recalcBottleEditor();
+    });
+    recalcBottleEditor();
+  }
+
   function openBottleBatchEditor(id){
     const b=jload(BOTTLE_BATCH,[]).find(x=>x.id===id);
     if(!b)return;
     bottleEditBatchId=id;
     document.getElementById('editBottleDate').value=b.date||ktoday();
     document.getElementById('editBottleWholesaler').value=b.wholesaler||'';
+    document.getElementById('editBottleMemo').value=b.memo||'';
     renderBottleEditItems(JSON.parse(JSON.stringify(b.items||[])));
+    renderBottleEditDeductions(JSON.parse(JSON.stringify(b.deductions||[])));
     document.getElementById('bottleBatchEditModal').classList.add('open');
     document.getElementById('bottleBatchEditModal').setAttribute('aria-hidden','false');
   }
@@ -4046,10 +4163,19 @@ window.addEventListener('DOMContentLoaded',()=>{
 
     if(!items.length){alert('완통반품 약을 1개 이상 남겨 주세요.');return}
 
+    const deductions=[...document.querySelectorAll('#editBottleDeductions .v52-deduction-row')].map(row=>({
+      id:'D'+Date.now()+Math.random().toString(36).slice(2,6),
+      date:row.querySelector('.dDate').value||ktoday(),
+      amount:Number(row.querySelector('.dAmount').value||0),
+      note:row.querySelector('.dNote').value.trim()
+    })).filter(x=>x.amount>0);
+
     b.date=date;
     b.wholesaler=wholesaler;
     b.items=items;
     b.total=items.reduce((sum,x)=>sum+x.total,0);
+    b.deductions=deductions;
+    b.memo=document.getElementById('editBottleMemo').value.trim();
     jstore(BOTTLE_BATCH,all);
 
     const wholeList=jload(WHOLE_KEY,[]);
@@ -4091,6 +4217,20 @@ window.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('bottleAddItem').onclick=addBottleItem;
     document.getElementById('bottleNewItem').onclick=clearBottleItem;
     document.getElementById('bottleCloseBatch').onclick=closeBottleBatch;
+    document.getElementById('bottleResetDraft').onclick=()=>{
+      if(!confirm('작성 중인 완통반품 품목을 모두 지울까요?'))return;
+      bottleDraft=[];
+      renderBottleDraft();
+      document.getElementById('bottleDrugName').value='';
+      document.getElementById('bottleUnitPrice').value='';
+      document.getElementById('bottleQty').value='';
+      bottleItemCalc();
+      document.getElementById('bottleBatchMemo').value='';
+    };
+    document.getElementById('bottleExportBtn').onclick=downloadBackup;
+    document.getElementById('bottleImportBtn').onclick=()=>document.getElementById('bottleImportFile').click();
+    document.getElementById('bottleImportFile').onchange=e=>restoreBackupFromFile(e.target.files[0],e.target);
+    document.getElementById('bottleSearch').addEventListener('input',renderBottleHistory);
 
     document.getElementById('bottleSentDate').value=ktoday();
     refreshBottleMaster();
@@ -4119,9 +4259,29 @@ window.addEventListener('DOMContentLoaded',()=>{
       row.querySelector('.removeEditItem').onclick=()=>{row.remove();recalcBottleEditor()};
       row.querySelector('.eDrug').focus();
     };
+    document.getElementById('addEditBottleDeduction').onclick=()=>{
+      const wrap=document.getElementById('editBottleDeductions');
+      wrap.insertAdjacentHTML('beforeend',`
+        <div class="v52-deduction-row">
+          <input class="dDate" type="date" value="${ktoday()}">
+          <input class="dAmount" type="number" min="0" inputmode="numeric" value="0" placeholder="금액">
+          <input class="dNote" placeholder="메모">
+          <button type="button" class="danger removeDeduction">삭제</button>
+        </div>`);
+      const row2=wrap.lastElementChild;
+      row2.querySelector('.dAmount').addEventListener('input',recalcBottleEditor);
+      row2.querySelector('.removeDeduction').onclick=()=>{row2.remove();recalcBottleEditor()};
+      row2.querySelector('.dAmount').focus();
+    };
 
     setMainReturnMode(localStorage.getItem('pill-return-main-return-mode-v46')||'loose');
   });
+
+  // 백업 복원 등 IIFE 바깥(낱알반품 스코프)에서도 완통반품 화면을 갱신할 수 있도록 노출
+  window.refreshBottleMaster=refreshBottleMaster;
+  window.refreshBottleWholesalers=refreshBottleWholesalers;
+  window.renderBottleDraft=renderBottleDraft;
+  window.renderBottleHistory=renderBottleHistory;
 })();
 </script>
 
@@ -4147,6 +4307,20 @@ window.addEventListener('DOMContentLoaded',()=>{
       <div id="editBottleItems"></div>
       <button type="button" class="secondary" id="addEditBottleItem" style="width:100%;margin-top:8px">+ 약 추가</button>
       <div class="v52-edit-total"><span>총 반품금액</span><b id="editBottleTotal">0원</b></div>
+    </div>
+
+    <div class="v52-editor-card">
+      <div style="display:flex;align-items:center;gap:8px">
+        <b style="flex:1">빠진금액 내역</b>
+        <button type="button" class="secondary" id="addEditBottleDeduction">+ 차감 추가</button>
+      </div>
+      <div id="editBottleDeductions"></div>
+      <div class="v52-edit-total"><span>실제 빠진금액</span><b id="editBottleDeductTotal">0원</b></div>
+    </div>
+
+    <div style="margin-top:12px">
+      <label>메모</label>
+      <textarea id="editBottleMemo" placeholder="메모"></textarea>
     </div>
 
     <div class="v52-modal-actions">
